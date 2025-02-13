@@ -44,8 +44,7 @@ CLASS zcl_llm_client_azureoai IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD get_client.
-    result = NEW zcl_llm_client_azureoai( client_config   = client_config
-                                          provider_config = provider_config ).
+    CREATE OBJECT result TYPE zcl_llm_client_azureoai EXPORTING client_config = client_config provider_config = provider_config.
   ENDMETHOD.
 
   METHOD get_http_client.
@@ -69,7 +68,7 @@ CLASS zcl_llm_client_azureoai IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD create_structured_output.
-    result = NEW zcl_llm_so_js_azureoai( ).
+    CREATE OBJECT result TYPE zcl_llm_so_js_azureoai.
   ENDMETHOD.
 
   METHOD get_chat_endpoint.

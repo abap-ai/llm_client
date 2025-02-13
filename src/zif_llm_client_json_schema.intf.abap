@@ -1,12 +1,13 @@
 "! <p class="shorttext synchronized" lang="en">Structured Output</p>
 INTERFACE zif_llm_client_json_schema
   PUBLIC .
-  TYPES: BEGIN OF ENUM value_type,
-           string,
-           number,
-           boolean,
-           integer,
-         END OF ENUM value_type.
+  TYPES value_type TYPE string.
+CONSTANTS: BEGIN OF undefined,
+             string TYPE value_type VALUE '1',
+             number TYPE value_type VALUE '2',
+             boolean TYPE value_type VALUE '3',
+             integer TYPE value_type VALUE '4',
+           END OF undefined.
 
   TYPES: BEGIN OF property_def,
            name        TYPE string,

@@ -15,17 +15,22 @@ ENDCLASS.
 
 CLASS ltcl_llm_encryption_test IMPLEMENTATION.
   METHOD setup.
-    encryption = NEW zcl_llm_encryption( ).
+    CREATE OBJECT encryption TYPE zcl_llm_encryption.
   ENDMETHOD.
 
   METHOD encrypt_decrypt_works.
     " Given
-    DATA(original_text) = `Hello, World! This is a test message`.
+    DATA original_text TYPE string.
+        DATA encrypted_text TYPE xstring.
+        DATA decrypted_text TYPE string.
+    original_text = `Hello, World! This is a test message`.
 
     " When
     TRY.
-        DATA(encrypted_text) = encryption->encrypt( original_text ).
-        DATA(decrypted_text) = encryption->decrypt( encrypted_text ).
+        
+        encrypted_text = encryption->encrypt( original_text ).
+        
+        decrypted_text = encryption->decrypt( encrypted_text ).
       CATCH zcx_llm_authorization.
         cl_abap_unit_assert=>fail( 'Unexpected authorization error' ).
     ENDTRY.
@@ -41,12 +46,17 @@ CLASS ltcl_llm_encryption_test IMPLEMENTATION.
 
   METHOD encrypt_empty_string.
     " Given
-    DATA(original_text) = ``.
+    DATA original_text TYPE string.
+        DATA encrypted_text TYPE xstring.
+        DATA decrypted_text TYPE string.
+    original_text = ``.
 
     " When
     TRY.
-        DATA(encrypted_text) = encryption->encrypt( original_text ).
-        DATA(decrypted_text) = encryption->decrypt( encrypted_text ).
+        
+        encrypted_text = encryption->encrypt( original_text ).
+        
+        decrypted_text = encryption->decrypt( encrypted_text ).
       CATCH zcx_llm_authorization.
         cl_abap_unit_assert=>fail( 'Unexpected authorization error' ).
     ENDTRY.
@@ -61,15 +71,20 @@ CLASS ltcl_llm_encryption_test IMPLEMENTATION.
 
   METHOD encrypt_long_string.
     " Given
-    DATA(original_text) = repeat(
+    DATA original_text TYPE string.
+        DATA encrypted_text TYPE xstring.
+        DATA decrypted_text TYPE string.
+    original_text = repeat(
       val = 'This is a very long test string that exceeds standard buffer sizes '
       occ = 100
     ).
 
     " When
     TRY.
-        DATA(encrypted_text) = encryption->encrypt( original_text ).
-        DATA(decrypted_text) = encryption->decrypt( encrypted_text ).
+        
+        encrypted_text = encryption->encrypt( original_text ).
+        
+        decrypted_text = encryption->decrypt( encrypted_text ).
       CATCH zcx_llm_authorization.
         cl_abap_unit_assert=>fail( 'Unexpected authorization error' ).
     ENDTRY.

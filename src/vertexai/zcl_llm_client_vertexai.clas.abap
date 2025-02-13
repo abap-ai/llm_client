@@ -35,13 +35,13 @@ CLASS zcl_llm_client_vertexai DEFINITION
              " We need this as pure json content in order to parse it later
              args TYPE /ui2/cl_json=>json,
            END OF vertexai_function,
-           vertexai_functions TYPE STANDARD TABLE OF vertexai_function WITH EMPTY KEY.
+           vertexai_functions TYPE STANDARD TABLE OF vertexai_function WITH DEFAULT KEY.
 
     TYPES: BEGIN OF vertexai_part,
              text         TYPE string,
              functioncall TYPE vertexai_function,
            END OF vertexai_part,
-           vertexai_parts TYPE STANDARD TABLE OF vertexai_part WITH EMPTY KEY.
+           vertexai_parts TYPE STANDARD TABLE OF vertexai_part WITH DEFAULT KEY.
 
     TYPES: BEGIN OF vertexai_usage,
              prompttokencount     TYPE i,
@@ -58,7 +58,7 @@ CLASS zcl_llm_client_vertexai DEFINITION
              content      TYPE vertexai_content,
              finishreason TYPE string,
            END OF vertexai_candidate,
-           vertexai_candidates TYPE STANDARD TABLE OF vertexai_candidate WITH EMPTY KEY.
+           vertexai_candidates TYPE STANDARD TABLE OF vertexai_candidate WITH DEFAULT KEY.
 
     TYPES: BEGIN OF vertexai_response,
              candidates    TYPE vertexai_candidates,
@@ -76,8 +76,7 @@ CLASS zcl_llm_client_vertexai IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD get_client.
-    result = NEW zcl_llm_client_vertexai( client_config   = client_config
-                                            provider_config = provider_config ).
+    CREATE OBJECT result TYPE zcl_llm_client_vertexai EXPORTING client_config = client_config provider_config = provider_config.
   ENDMETHOD.
 
   METHOD get_chat_endpoint.
@@ -93,19 +92,23 @@ CLASS zcl_llm_client_vertexai IMPLEMENTATION.
     " We cannot set any auth header now, we need to get an active token
     " right before every call instead. We just initialize the class.
     IF provider_config-auth_type = 'B'.
-      auth = NEW zcl_llm_client_vertex_auth( ).
+      CREATE OBJECT auth TYPE zcl_llm_client_vertex_auth.
     ENDIF.
   ENDMETHOD.
 
   METHOD zif_llm_client~chat.
+        DATA token TYPE zcl_llm_client_vertexai_sr=>token.
+      DATA error TYPE REF TO ZCX_LLM_HTTP_ERROR.
     " Set the auth header, everything else will be handled by the base class
     TRY.
-        DATA(token) = auth->get_token( provider_config ).
+        
+        token = auth->get_token( provider_config ).
         client->set_header( name  = 'Authorization'
                             value = |Bearer { token-content }| ) ##NO_TEXT.
         response = super->zif_llm_client~chat( request ).
+      
       CATCH zcx_llm_http_error
-            zcx_llm_authorization INTO DATA(error).
+            zcx_llm_authorization INTO error.
         response-success = abap_false.
         response-error-error_text = error->get_text( ).
         response-error-retrieable = abap_false.
@@ -113,15 +116,27 @@ CLASS zcl_llm_client_vertexai IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD build_request_json.
+    DATA first_line TYPE abap_bool VALUE abap_true.
+    DATA non_system_messages TYPE zllm_msgs.
+    DATA system_messages TYPE zllm_msgs.
+    FIELD-SYMBOLS <message> LIKE LINE OF request-messages.
+    DATA message LIKE LINE OF non_system_messages.
+      DATA system_message LIKE LINE OF system_messages.
+      FIELD-SYMBOLS <tool> LIKE LINE OF request-tools.
+        DATA details TYPE zif_llm_tool=>tool_details.
+    DATA option_parameters TYPE zllm_keyvalues.
+      DATA parameter LIKE LINE OF option_parameters.
+        DATA res_length TYPE i.
     " Open content
     result = |\{"contents":[|.
-    DATA first_line          TYPE abap_bool VALUE abap_true.
+    
 
     " Anthropic handles system messages differently
-    DATA non_system_messages TYPE zllm_msgs.
-    DATA system_messages     TYPE zllm_msgs.
+    
+    
 
-    LOOP AT request-messages ASSIGNING FIELD-SYMBOL(<message>).
+    
+    LOOP AT request-messages ASSIGNING <message>.
       IF <message>-role = 'system'.
         APPEND <message> TO system_messages.
       ELSE.
@@ -130,7 +145,8 @@ CLASS zcl_llm_client_vertexai IMPLEMENTATION.
     ENDLOOP.
 
     " Add messages
-    LOOP AT non_system_messages INTO DATA(message).
+    
+    LOOP AT non_system_messages INTO message.
       IF first_line = abap_true.
         result = |{ result }{ parse_message( message ) }|.
         first_line = abap_false.
@@ -144,7 +160,8 @@ CLASS zcl_llm_client_vertexai IMPLEMENTATION.
     IF lines( system_messages ) > 0.
       first_line = abap_true.
       result = |{ result },"systemInstruction":\{"parts":[|.
-      LOOP AT system_messages INTO DATA(system_message).
+      
+      LOOP AT system_messages INTO system_message.
         IF first_line = abap_true.
           result = |{ result }\{"text":"{ system_message-content }"\}|.
           first_line = abap_false.
@@ -159,8 +176,10 @@ CLASS zcl_llm_client_vertexai IMPLEMENTATION.
     IF lines( request-tools ) > 0 AND request-tool_choice <> zif_llm_chat_request=>tool_choice_none.
       result = |{ result },"tools":[\{"function_declarations":[|.
       first_line = abap_true.
-      LOOP AT request-tools ASSIGNING FIELD-SYMBOL(<tool>).
-        DATA(details) = <tool>->get_tool_details( ).
+      
+      LOOP AT request-tools ASSIGNING <tool>.
+        
+        details = <tool>->get_tool_details( ).
         IF first_line = abap_true.
           result = |{ result }\{"name":"{ details-name }"|
                 && |,"description":"{ details-description }","parameters":|
@@ -193,11 +212,13 @@ CLASS zcl_llm_client_vertexai IMPLEMENTATION.
     ENDIF.
 
     " Add options if available
-    DATA(option_parameters) = request-options->get_paramters( ).
+    
+    option_parameters = request-options->get_paramters( ).
     IF lines( option_parameters ) > 0.
       result = |{ result },"generationConfig":\{|.
       first_line = abap_true.
-      LOOP AT option_parameters INTO DATA(parameter).
+      
+      LOOP AT option_parameters INTO parameter.
         IF first_line = abap_true.
           result = |{ result }"{ parameter-key }":{ parameter-value }|.
           first_line = abap_false.
@@ -212,7 +233,8 @@ CLASS zcl_llm_client_vertexai IMPLEMENTATION.
     IF request-use_structured_output = abap_true.
       first_line = abap_true.
       IF lines( option_parameters ) > 0.
-        DATA(res_length) = strlen( result ) - 1.
+        
+        res_length = strlen( result ) - 1.
         result = result(res_length).
         first_line = abap_false.
       ELSE.
@@ -229,9 +251,12 @@ CLASS zcl_llm_client_vertexai IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD parse_message.
+      FIELD-SYMBOLS <tool_call> LIKE LINE OF message-tool_calls.
+      DATA role TYPE string.
     IF lines( message-tool_calls ) > 0.
       result = |\{"parts":[|.
-      LOOP AT message-tool_calls ASSIGNING FIELD-SYMBOL(<tool_call>).
+      
+      LOOP AT message-tool_calls ASSIGNING <tool_call>.
         IF sy-tabix <> 1.
           result = |{ result },|.
         ENDIF.
@@ -241,7 +266,7 @@ CLASS zcl_llm_client_vertexai IMPLEMENTATION.
       ENDLOOP.
       result = |{ result }]\}|.
     ELSE.
-      DATA role TYPE string.
+      
       CASE message-role.
         WHEN zif_llm_client=>role_user.
           role = zif_llm_client=>role_user.
@@ -256,9 +281,15 @@ CLASS zcl_llm_client_vertexai IMPLEMENTATION.
 
   METHOD zif_llm_client~new_request.
     DATA request TYPE zllm_request.
+      DATA options TYPE STANDARD TABLE OF string WITH DEFAULT KEY.
+      DATA parameters TYPE zllm_keyvalues.
+      DATA option LIKE LINE OF options.
+        DATA key TYPE string.
+        DATA value TYPE string.
+        DATA temp1 TYPE zllm_keyvalue.
 
     " Initialize options
-    request-options           = NEW zcl_llm_options_vertexai( ).
+    CREATE OBJECT request-options TYPE zcl_llm_options_vertexai.
     " Same for tool parser
     tool_parser = create_tool_parser( ).
 
@@ -267,13 +298,20 @@ CLASS zcl_llm_client_vertexai IMPLEMENTATION.
 
     " Get configured default parameters and set them
     IF client_config-default_op IS NOT INITIAL.
-      SPLIT client_config-default_op AT ';' INTO TABLE DATA(options).
-      DATA parameters TYPE zllm_keyvalues.
+      
+      SPLIT client_config-default_op AT ';' INTO TABLE options.
+      
 
-      LOOP AT options INTO DATA(option).
-        SPLIT option AT ':' INTO DATA(key) DATA(value).
-        INSERT VALUE #( key   = key
-                        value = value )
+      
+      LOOP AT options INTO option.
+        
+        
+        SPLIT option AT ':' INTO key value.
+        
+        CLEAR temp1.
+        temp1-key = key.
+        temp1-value = value.
+        INSERT temp1
                INTO TABLE parameters.
       ENDLOOP.
 
@@ -281,10 +319,24 @@ CLASS zcl_llm_client_vertexai IMPLEMENTATION.
     ENDIF.
 
     " Create and return chat request object
-    response = NEW zcl_llm_chat_request( request ).
+    CREATE OBJECT response TYPE zcl_llm_chat_request EXPORTING REQUEST = request.
   ENDMETHOD.
 
   METHOD handle_http_response.
+    DATA response TYPE vertexai_response.
+    DATA candidate TYPE zcl_llm_client_vertexai=>vertexai_candidate.
+    DATA temp1 LIKE LINE OF response-candidates.
+    DATA temp4 LIKE sy-tabix.
+    DATA messages TYPE string_table.
+    DATA functions TYPE vertexai_functions.
+    FIELD-SYMBOLS <part> LIKE LINE OF candidate-content-parts.
+      FIELD-SYMBOLS <tool> LIKE LINE OF request-tools.
+        DATA details TYPE zif_llm_tool=>tool_details.
+        FIELD-SYMBOLS <tool_call> LIKE LINE OF functions.
+              DATA func_result TYPE REF TO data.
+              DATA temp2 TYPE zllm_tool_call.
+              DATA temp3 TYPE zllm_msg.
+              DATA message_text TYPE string.
     IF http_response-code >= 400.
       result-error-http_code  = http_response-code.
       result-error-error_text = http_response-message.
@@ -295,7 +347,7 @@ CLASS zcl_llm_client_vertexai IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    DATA response TYPE vertexai_response.
+    
 
     zcl_llm_common=>from_json( EXPORTING json = http_response-response
                                CHANGING  data = response ).
@@ -307,12 +359,22 @@ CLASS zcl_llm_client_vertexai IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    DATA(candidate) = response-candidates[ 1 ].
+    
+    
+    
+    temp4 = sy-tabix.
+    READ TABLE response-candidates INDEX 1 INTO temp1.
+    sy-tabix = temp4.
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
+    ENDIF.
+    candidate = temp1.
 
     " There can be multiple parts in case of function calls, for text we expect one only
-    DATA messages  TYPE string_table.
-    DATA functions TYPE vertexai_functions.
-    LOOP AT candidate-content-parts ASSIGNING FIELD-SYMBOL(<part>).
+    
+    
+    
+    LOOP AT candidate-content-parts ASSIGNING <part>.
       IF <part>-text IS NOT INITIAL.
         APPEND <part>-text TO messages.
       ENDIF.
@@ -321,14 +383,17 @@ CLASS zcl_llm_client_vertexai IMPLEMENTATION.
       ENDIF.
     ENDLOOP.
 
-    result-choice = VALUE #( finish_reason = candidate-finishreason
-                             message       = VALUE #( role    = zif_llm_client=>role_assistant
-                                                      content = concat_lines_of( table = messages
-                                                                                 sep   = `\n` ) ) ).
+    CLEAR result-choice.
+    result-choice-finish_reason = candidate-finishreason.
+    CLEAR result-choice-message.
+    result-choice-message-role = zif_llm_client=>role_assistant.
+    result-choice-message-content = concat_lines_of( table = messages
+sep = `\n` ).
 
-    result-usage  = VALUE #( completion_tokens = response-usagemetadata-candidatestokencount
-                             prompt_tokens     = response-usagemetadata-prompttokencount
-                             total_tokens      = response-usagemetadata-totaltokencount ).
+    CLEAR result-usage.
+    result-usage-completion_tokens = response-usagemetadata-candidatestokencount.
+    result-usage-prompt_tokens = response-usagemetadata-prompttokencount.
+    result-usage-total_tokens = response-usagemetadata-totaltokencount.
 
     " Structured output currently not supported
     IF request-use_structured_output = abap_true.
@@ -339,12 +404,15 @@ CLASS zcl_llm_client_vertexai IMPLEMENTATION.
 
     " Handle tool calls
     IF request-tool_choice <> zif_llm_chat_request=>tool_choice_none.
-      LOOP AT request-tools ASSIGNING FIELD-SYMBOL(<tool>).
-        DATA(details) = <tool>->get_tool_details( ).
+      
+      LOOP AT request-tools ASSIGNING <tool>.
+        
+        details = <tool>->get_tool_details( ).
 
-        LOOP AT functions ASSIGNING FIELD-SYMBOL(<tool_call>) WHERE name = details-name.
+        
+        LOOP AT functions ASSIGNING <tool_call> WHERE name = details-name.
           TRY.
-              DATA func_result TYPE REF TO data.
+              
               CREATE DATA func_result TYPE HANDLE details-parameters-data_desc.
 
               " Parse the JSON arguments
@@ -352,23 +420,32 @@ CLASS zcl_llm_client_vertexai IMPLEMENTATION.
                                          CHANGING  data = func_result ).
 
               " Add tool call to response
-              APPEND VALUE #( id       = ``
-                              type     = zif_llm_tool=>type_function
-                              function = VALUE #( name          = details-name
-                                                  arguments     = func_result
-                                                  json_response = <tool_call>-args ) )
+              
+              CLEAR temp2.
+              temp2-id = ``.
+              temp2-type = zif_llm_tool=>type_function.
+              CLEAR temp2-function.
+              temp2-function-name = details-name.
+              temp2-function-arguments = func_result.
+              temp2-function-json_response = <tool_call>-args.
+              APPEND temp2
                      TO result-choice-tool_calls.
 
-              result-choice-message = VALUE #( BASE result-choice-message
-                                               role    = zif_llm_client=>role_tool
-                                               name    = details-name
-                                               content = <tool_call>-args ).
+              
+              CLEAR temp3.
+              temp3 = result-choice-message.
+              temp3-role = zif_llm_client=>role_tool.
+              temp3-name = details-name.
+              temp3-content = <tool_call>-args.
+              result-choice-message = temp3.
 
             CATCH cx_root.
               result-success = abap_false.
-              MESSAGE ID 'ZLLM_CLIENT' TYPE 'E' NUMBER 016 WITH <tool_call>-name INTO DATA(message_text).
-              result-error = VALUE #( tool_parse_error = abap_true
-                                      error_text       = message_text ).
+              
+              MESSAGE ID 'ZLLM_CLIENT' TYPE 'E' NUMBER 016 WITH <tool_call>-name INTO message_text.
+              CLEAR result-error.
+              result-error-tool_parse_error = abap_true.
+              result-error-error_text = message_text.
               RETURN.
           ENDTRY.
         ENDLOOP.
@@ -377,8 +454,9 @@ CLASS zcl_llm_client_vertexai IMPLEMENTATION.
         IF sy-subrc <> 0 AND request-tool_choice = zif_llm_chat_request=>tool_choice_required.
           result-success = abap_false.
           MESSAGE ID 'ZLLM_CLIENT' TYPE 'E' NUMBER 017 WITH details-name INTO message_text.
-          result-error = VALUE #( tool_parse_error = abap_true
-                                  error_text       = message_text ).
+          CLEAR result-error.
+          result-error-tool_parse_error = abap_true.
+          result-error-error_text = message_text.
           RETURN.
         ENDIF.
       ENDLOOP.

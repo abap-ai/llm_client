@@ -35,11 +35,16 @@ CLASS zcl_llm_chat_request IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD add_tool_result.
-    DATA(tool_result) = tool->get_result( ).
-    APPEND VALUE #( role         = zif_llm_client=>role_tool
-                    tool_call_id = tool_result-tool_call_id
-                    content      = zcl_llm_common=>to_json( data = tool_result-data compress = abap_false )
-                    name         = tool_result-name ) TO request-messages.
+    DATA tool_result TYPE zif_llm_tool=>tool_result.
+    DATA temp1 TYPE zllm_msg.
+    tool_result = tool->get_result( ).
+    
+    CLEAR temp1.
+    temp1-role = zif_llm_client=>role_tool.
+    temp1-tool_call_id = tool_result-tool_call_id.
+    temp1-content = zcl_llm_common=>to_json( data = tool_result-data compress = abap_false ).
+    temp1-name = tool_result-name.
+    APPEND temp1 TO request-messages.
   ENDMETHOD.
 
   METHOD add_messages.

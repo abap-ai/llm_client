@@ -52,7 +52,8 @@ ENDCLASS.
 
 CLASS zcl_llm_client_vertex_auth IMPLEMENTATION.
   METHOD get_token.
-    DATA(token) = get_memory_token( provider-provider_name ).
+    DATA token TYPE zcl_llm_client_vertexai_sr=>token.
+    token = get_memory_token( provider-provider_name ).
     IF token IS NOT INITIAL AND is_valid( token ) = abap_true.
       result = token.
       RETURN.
@@ -63,8 +64,11 @@ CLASS zcl_llm_client_vertex_auth IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD get_memory_token.
+        DATA area TYPE REF TO ZCL_LLM_CLIENT_VERTEXAI_S_AREA.
+        DATA temp1 TYPE zcl_llm_client_vertexai_sr=>token.
     TRY.
-        DATA(area) = zcl_llm_client_vertexai_s_area=>attach_for_read( ).
+        
+        area = zcl_llm_client_vertexai_s_area=>attach_for_read( ).
         result = area->root->get_token( provider_name ).
         area->detach( ).
       CATCH cx_shm_inconsistent
@@ -74,21 +78,66 @@ CLASS zcl_llm_client_vertex_auth IMPLEMENTATION.
             cx_shm_parameter_error
             cx_shm_change_lock_active.
         " we just set this as no token
-        result = VALUE #( ).
+        
+        CLEAR temp1.
+        result = temp1.
     ENDTRY.
   ENDMETHOD.
 
   METHOD is_valid.
     DATA current_timestamp TYPE timestamp.
+    DATA valid TYPE i.
+    DATA temp1 TYPE xsdboolean.
 
     GET TIME STAMP FIELD current_timestamp.
-    DATA(valid) = cl_abap_tstmp=>subtract( tstmp1 = token-valid_until
+    
+    valid = cl_abap_tstmp=>subtract( tstmp1 = token-valid_until
                                            tstmp2 = current_timestamp ).
-    result = xsdbool( valid > 60 ).
+    
+    temp1 = boolc( valid > 60 ).
+    result = temp1.
   ENDMETHOD.
 
   METHOD new_token.
     DATA auth_config TYPE string.
+      DATA temp2 TYPE REF TO zcx_llm_http_error.
+    DATA ssf_application TYPE string.
+    DATA username TYPE string.
+      DATA temp3 TYPE REF TO zcx_llm_http_error.
+DATA BEGIN OF payload_header.
+DATA alg TYPE string.
+DATA typ TYPE string.
+DATA END OF payload_header.
+DATA BEGIN OF payload_body.
+DATA iss TYPE string.
+DATA aud TYPE string.
+DATA scope TYPE string.
+DATA iat TYPE i.
+DATA exp TYPE i.
+DATA END OF payload_body.
+    DATA timestamp TYPE p LENGTH 8 DECIMALS 0.
+    DATA date TYPE d.
+    DATA time TYPE t.
+    DATA unix_time TYPE string.
+    DATA json_header TYPE string.
+    DATA json_body TYPE string.
+    DATA header_encoded TYPE string.
+    DATA body_encoded TYPE string.
+    DATA payload_encoded TYPE string.
+        DATA temp4 TYPE ssfappl.
+        DATA error TYPE REF TO zcx_llm_validation.
+        DATA temp5 TYPE REF TO zcx_llm_http_error.
+    DATA signature_base64 TYPE string.
+    DATA client TYPE REF TO if_http_client.
+      DATA temp6 TYPE REF TO zcx_llm_http_error.
+      DATA temp7 TYPE REF TO zcx_llm_http_error.
+      DATA temp8 TYPE REF TO zcx_llm_http_error.
+    DATA response TYPE string.
+DATA BEGIN OF oauth_response.
+DATA access_token TYPE string.
+DATA expires_in TYPE i.
+DATA END OF oauth_response.
+      DATA temp9 TYPE REF TO zcx_llm_http_error.
 
     IF provider-auth_encrypted IS NOT INITIAL.
       DATA(llm_badi) = zcl_llm_common=>get_llm_badi( ).
@@ -96,28 +145,22 @@ CLASS zcl_llm_client_vertex_auth IMPLEMENTATION.
         RECEIVING result = DATA(enc_class).
       auth_config = enc_class->decrypt( provider-auth_encrypted ).
     ELSE.
-      RAISE EXCEPTION NEW zcx_llm_http_error( textid = zcx_llm_http_error=>http_auth_processing
-                                              attr1  = 'Missing google vertex configuration' ) ##NO_TEXT.
+      
+      CREATE OBJECT temp2 TYPE zcx_llm_http_error EXPORTING textid = zcx_llm_http_error=>http_auth_processing attr1 = 'Missing google vertex configuration'.
+      RAISE EXCEPTION temp2 ##NO_TEXT.
     ENDIF.
 
-    SPLIT auth_config AT ';' INTO DATA(ssf_application) DATA(username).
+    
+    
+    SPLIT auth_config AT ';' INTO ssf_application username.
     IF ssf_application IS INITIAL OR username IS INITIAL.
-      RAISE EXCEPTION NEW zcx_llm_http_error(
-          textid = zcx_llm_http_error=>http_auth_processing
-          attr1  = 'Missing google vertex details it should be ssf_application;serviceaccountemail' ) ##NO_TEXT.
+      
+      CREATE OBJECT temp3 TYPE zcx_llm_http_error EXPORTING textid = zcx_llm_http_error=>http_auth_processing attr1 = 'Missing google vertex details it should be ssf_application;serviceaccountemail'.
+      RAISE EXCEPTION temp3 ##NO_TEXT.
     ENDIF.
 
-    DATA: BEGIN OF payload_header,
-            alg TYPE string,
-            typ TYPE string,
-          END OF payload_header.
-    DATA: BEGIN OF payload_body,
-            iss   TYPE string,
-            aud   TYPE string,
-            scope TYPE string,
-            iat   TYPE i,
-            exp   TYPE i,
-          END OF payload_body.
+    
+    
 
     payload_header-alg = 'RS256'.
     payload_header-typ = 'JWT'.
@@ -126,9 +169,12 @@ CLASS zcl_llm_client_vertex_auth IMPLEMENTATION.
     payload_body-scope = 'https://www.googleapis.com/auth/cloud-platform'.
     payload_body-aud   = 'https://oauth2.googleapis.com/token'.
 
-    GET TIME STAMP FIELD DATA(timestamp).
-    CONVERT TIME STAMP timestamp TIME ZONE 'UTC' INTO DATE DATA(date) TIME DATA(time).
-    DATA unix_time TYPE string.
+    
+    GET TIME STAMP FIELD timestamp.
+    
+    
+    CONVERT TIME STAMP timestamp TIME ZONE 'UTC' INTO DATE date TIME time.
+    
     cl_pco_utility=>convert_abap_timestamp_to_java( EXPORTING iv_date      = date
                                                               iv_time      = time
                                                               iv_msec      = 0
@@ -140,13 +186,18 @@ CLASS zcl_llm_client_vertex_auth IMPLEMENTATION.
     payload_body-exp = payload_body-iat + 3600.
 
     " Create the JSON strings inside the concatenation using string templates
-    DATA(json_header) = zcl_llm_common=>to_json( payload_header ).
-    DATA(json_body) = zcl_llm_common=>to_json( payload_body ).
-    DATA(header_encoded) = cl_http_utility=>encode_base64( json_header ).
-    DATA(body_encoded) = cl_http_utility=>encode_base64( json_body ).
+    
+    json_header = zcl_llm_common=>to_json( payload_header ).
+    
+    json_body = zcl_llm_common=>to_json( payload_body ).
+    
+    header_encoded = cl_http_utility=>encode_base64( json_header ).
+    
+    body_encoded = cl_http_utility=>encode_base64( json_body ).
 
     " Concatenate with '.'
-    DATA(payload_encoded) = |{ header_encoded }.{ body_encoded }|.
+    
+    payload_encoded = |{ header_encoded }.{ body_encoded }|.
     payload_encoded = replace( val  = payload_encoded
                                sub  = '='
                                with = ``
@@ -163,16 +214,20 @@ CLASS zcl_llm_client_vertex_auth IMPLEMENTATION.
     DATA(bin_payload) = cl_binary_convert=>string_to_xstring_utf8( payload_encoded ).
 
     TRY.
-        DATA(signature) = enc_class->sign( ssf_application = CONV ssfappl( ssf_application )
+        
+        temp4 = ssf_application.
+        DATA(signature) = enc_class->sign( ssf_application = temp4
                                            xstring_to_sign = bin_payload ).
-      CATCH zcx_llm_validation INTO DATA(error). " Validation error
-        RAISE EXCEPTION NEW zcx_llm_http_error( textid   = zcx_llm_http_error=>http_auth_processing
-                                                attr1    = 'Error during signing'
-                                                previous = error ) ##NO_TEXT.
+        
+      CATCH zcx_llm_validation INTO error. " Validation error
+        
+        CREATE OBJECT temp5 TYPE zcx_llm_http_error EXPORTING textid = zcx_llm_http_error=>http_auth_processing attr1 = 'Error during signing' previous = error.
+        RAISE EXCEPTION temp5 ##NO_TEXT.
     ENDTRY.
 
     " Base64 encode the binary signature
-    DATA(signature_base64) = cl_http_utility=>encode_x_base64( unencoded = signature ).
+    
+    signature_base64 = cl_http_utility=>encode_x_base64( unencoded = signature ).
     " URL-safe replacements after standard Base64 encoding:
     signature_base64 = replace( val  = signature_base64
                                 sub  = '='
@@ -193,7 +248,7 @@ CLASS zcl_llm_client_vertex_auth IMPLEMENTATION.
     result-provider = provider-provider_name.
 
     " Use the signed jwt to authenticate and get the auth token
-    DATA client TYPE REF TO if_http_client.
+    
 
     cl_http_client=>create_by_destination( EXPORTING  destination              = provider-auth_rfc_destination
                                            IMPORTING  client                   = client
@@ -205,8 +260,9 @@ CLASS zcl_llm_client_vertex_auth IMPLEMENTATION.
                                                       OTHERS                   = 6 ).
 
     IF sy-subrc <> 0.
-      RAISE EXCEPTION NEW zcx_llm_http_error( textid = zcx_llm_http_error=>http_auth_processing
-                                              attr1  = 'Destination error, check setup' ) ##NO_TEXT.
+      
+      CREATE OBJECT temp6 TYPE zcx_llm_http_error EXPORTING textid = zcx_llm_http_error=>http_auth_processing attr1 = 'Destination error, check setup'.
+      RAISE EXCEPTION temp6 ##NO_TEXT.
     ENDIF.
 
     client->request->set_formfield_encoding( formfield_encoding = if_http_entity=>co_formfield_encoding_encoded ).
@@ -223,8 +279,9 @@ CLASS zcl_llm_client_vertex_auth IMPLEMENTATION.
                              http_invalid_timeout       = 4                  " Invalid Time Entry
                              OTHERS                     = 5 ).
     IF sy-subrc <> 0.
-      RAISE EXCEPTION NEW zcx_llm_http_error( textid = zcx_llm_http_error=>http_auth_processing
-                                              attr1  = 'Cannot send auth message' ) ##NO_TEXT.
+      
+      CREATE OBJECT temp7 TYPE zcx_llm_http_error EXPORTING textid = zcx_llm_http_error=>http_auth_processing attr1 = 'Cannot send auth message'.
+      RAISE EXCEPTION temp7 ##NO_TEXT.
     ENDIF.
 
     client->receive( EXCEPTIONS http_communication_failure = 1                " Communication Error
@@ -232,16 +289,15 @@ CLASS zcl_llm_client_vertex_auth IMPLEMENTATION.
                                 http_processing_failed     = 3                " Error When Processing Method
                                 OTHERS                     = 4 ).
     IF sy-subrc <> 0.
-      RAISE EXCEPTION NEW zcx_llm_http_error( textid = zcx_llm_http_error=>http_auth_processing
-                                              attr1  = 'Auth communication error' ) ##NO_TEXT.
+      
+      CREATE OBJECT temp8 TYPE zcx_llm_http_error EXPORTING textid = zcx_llm_http_error=>http_auth_processing attr1 = 'Auth communication error'.
+      RAISE EXCEPTION temp8 ##NO_TEXT.
     ENDIF.
 
-    DATA(response) = client->response->get_cdata( ).
+    
+    response = client->response->get_cdata( ).
 
-    DATA: BEGIN OF oauth_response,
-            access_token TYPE string,
-            expires_in   TYPE i,
-          END OF oauth_response.
+    
 
     zcl_llm_common=>from_json( EXPORTING json = response
                                CHANGING  data = oauth_response ).
@@ -251,15 +307,19 @@ CLASS zcl_llm_client_vertex_auth IMPLEMENTATION.
     result-content     = oauth_response-access_token.
 
     IF result-content IS INITIAL.
-      RAISE EXCEPTION NEW zcx_llm_http_error( textid = zcx_llm_http_error=>http_auth_processing
-                                              attr1  = |No auth token returned{ response }| ) ##NO_TEXT.
+      
+      CREATE OBJECT temp9 TYPE zcx_llm_http_error EXPORTING textid = zcx_llm_http_error=>http_auth_processing attr1 = |No auth token returned{ response }|.
+      RAISE EXCEPTION temp9 ##NO_TEXT.
     ENDIF.
   ENDMETHOD.
 
   METHOD save_token.
+        DATA area TYPE REF TO ZCL_LLM_CLIENT_VERTEXAI_S_AREA.
+        DATA temp10 TYPE REF TO zcx_llm_http_error.
     TRY.
         zcl_llm_client_vertexai_s_area=>build( ).
-        DATA(area) = zcl_llm_client_vertexai_s_area=>attach_for_update( ).
+        
+        area = zcl_llm_client_vertexai_s_area=>attach_for_update( ).
         area->root->set_token( token ).
         area->detach_commit( ).
       CATCH cx_shm_inconsistent
@@ -269,8 +329,9 @@ CLASS zcl_llm_client_vertex_auth IMPLEMENTATION.
             cx_shm_change_lock_active
             cx_shm_parameter_error
             cx_shm_pending_lock_removed.
-        RAISE EXCEPTION NEW zcx_llm_http_error( textid = zcx_llm_http_error=>http_auth_processing
-                                                attr1  = 'Unable to save token to shared memory' ) ##NO_TEXT.
+        
+        CREATE OBJECT temp10 TYPE zcx_llm_http_error EXPORTING textid = zcx_llm_http_error=>http_auth_processing attr1 = 'Unable to save token to shared memory'.
+        RAISE EXCEPTION temp10 ##NO_TEXT.
     ENDTRY.
   ENDMETHOD.
 

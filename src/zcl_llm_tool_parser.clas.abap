@@ -79,27 +79,52 @@ CLASS zcl_llm_tool_parser IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD get_enum_values.
-    result = REDUCE string(
-      INIT temp = ``
-      FOR value IN description-enum_values
-      INDEX INTO idx
-      NEXT temp = COND #(
-        WHEN idx = 1
-        THEN |"{ value }"|
-        ELSE |{ temp },"{ value }"| ) ).
+    DATA temp1 TYPE string.
+    DATA temp TYPE string.
+    DATA value LIKE LINE OF description-enum_values.
+      DATA idx LIKE sy-tabix.
+      DATA temp2 TYPE string.
+    temp = ``.
+    
+    LOOP AT description-enum_values INTO value.
+      
+      idx = sy-tabix.
+      
+      IF idx = 1.
+        temp2 = |"{ value }"|.
+      ELSE.
+        temp2 = |{ temp },"{ value }"|.
+      ENDIF.
+      temp = temp2.
+    ENDLOOP.
+    temp1 = temp.
+    result = temp1.
   ENDMETHOD.
 
   METHOD get_field_info.
-    result = VALUE #( name        = name
-                      path        = path
-                      description = VALUE #( descriptions[ fieldname = path ] OPTIONAL ) ).
+    DATA temp3 TYPE zif_llm_tool_parser=>def_description.
+    DATA temp4 TYPE zif_llm_tool_parser=>def_description.
+    CLEAR result.
+    result-name = name.
+    result-path = path.
+    
+    CLEAR temp3.
+    
+    READ TABLE descriptions INTO temp4 WITH KEY fieldname = path.
+    IF sy-subrc = 0.
+      temp3 = temp4.
+    ENDIF.
+    result-description = temp3.
   ENDMETHOD.
 
   METHOD get_path.
-    result = COND #(
-      WHEN current_path IS INITIAL
-      THEN to_lower( field_name )
-      ELSE |{ current_path }-{ to_lower( field_name ) }| ).
+    DATA temp2 TYPE string.
+    IF current_path IS INITIAL.
+      temp2 = to_lower( field_name ).
+    ELSE.
+      temp2 = |{ current_path }-{ to_lower( field_name ) }|.
+    ENDIF.
+    result = temp2.
   ENDMETHOD.
 
 
@@ -127,6 +152,8 @@ CLASS zcl_llm_tool_parser IMPLEMENTATION.
   ENDMETHOD.                                       "#EC EMPTY_PROCEDURE
 
   METHOD process_element.
+          DATA temp3 TYPE REF TO zcx_llm_validation.
+        DATA temp4 TYPE REF TO zcx_llm_validation.
     IF field-name IS NOT INITIAL.
       append_to_schema( |"{ field-name }":\{"title":"{ to_upper( field-name(1) ) }{ field-name+1 }",| ).
     ENDIF.
@@ -143,14 +170,14 @@ CLASS zcl_llm_tool_parser IMPLEMENTATION.
            AND '\TYPE-POOL=ABAP\TYPE=ABAP_BOOL\TYPE=BOOLEAN\TYPE=BOOLE_D\TYPE=XFELD' CS element_descriptor->absolute_name.
           append_to_schema( |"type":"boolean"| ).
         ELSE.
-          RAISE EXCEPTION NEW zcx_llm_validation(
-                                  textid = zcx_llm_validation=>unsupported_type
-                                  attr1  = |Unsupported elementary type: { element_descriptor->type_kind }| ) ##NO_TEXT.
+          
+          CREATE OBJECT temp3 TYPE zcx_llm_validation EXPORTING textid = zcx_llm_validation=>unsupported_type attr1 = |Unsupported elementary type: { element_descriptor->type_kind }|.
+          RAISE EXCEPTION temp3 ##NO_TEXT.
         ENDIF.
       WHEN OTHERS.
-        RAISE EXCEPTION NEW zcx_llm_validation(
-                                textid = zcx_llm_validation=>unsupported_type
-                                attr1  = |Unsupported elementary type: { element_descriptor->type_kind }| ) ##NO_TEXT.
+        
+        CREATE OBJECT temp4 TYPE zcx_llm_validation EXPORTING textid = zcx_llm_validation=>unsupported_type attr1 = |Unsupported elementary type: { element_descriptor->type_kind }|.
+        RAISE EXCEPTION temp4 ##NO_TEXT.
     ENDCASE.
 
     IF field-description-description IS NOT INITIAL.
@@ -167,6 +194,16 @@ CLASS zcl_llm_tool_parser IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD process_structure.
+    DATA components TYPE abap_component_tab.
+    DATA needs_comma TYPE abap_bool.
+    DATA temp5 LIKE LINE OF components.
+    DATA component LIKE REF TO temp5.
+      DATA child_field TYPE zcl_llm_tool_parser=>field_info.
+    DATA temp6 TYPE string.
+    DATA result TYPE string.
+    DATA comp LIKE LINE OF components.
+      DATA idx LIKE sy-tabix.
+      DATA temp7 TYPE string.
     IF field-name IS NOT INITIAL.
       append_to_schema( |,"{ field-name }":\{"title":"{ field-name }"| ).
       IF field-description-description IS NOT INITIAL.
@@ -183,10 +220,13 @@ CLASS zcl_llm_tool_parser IMPLEMENTATION.
       append_to_schema( |"type":"object","properties":\{| ).
     ENDIF.
 
-    DATA(components) = structure_descriptor->get_components( ).
-    DATA needs_comma TYPE abap_bool.
+    
+    components = structure_descriptor->get_components( ).
+    
 
-    LOOP AT components REFERENCE INTO DATA(component).
+    
+    
+    LOOP AT components REFERENCE INTO component.
       " Add comma if needed from previous iteration
       IF needs_comma = abap_true.
         append_to_schema( |,| ).
@@ -194,7 +234,8 @@ CLASS zcl_llm_tool_parser IMPLEMENTATION.
       " Default to true for next iteration
       needs_comma = abap_true.
 
-      DATA(child_field) = get_field_info( name = to_lower( component->name )
+      
+      child_field = get_field_info( name = to_lower( component->name )
                                           path = get_path( current_path = field-path
                                                            field_name   = component->name ) ).
 
@@ -203,14 +244,23 @@ CLASS zcl_llm_tool_parser IMPLEMENTATION.
     ENDLOOP.
 
     append_to_schema( |\},"required":[| ).
-    append_to_schema( REDUCE string(
-      INIT result = ``
-      FOR comp IN components
-      INDEX INTO idx
-      NEXT result = COND #(
-        WHEN idx = 1
-        THEN |"{ to_lower( comp-name ) }"|
-        ELSE |{ result },"{ to_lower( comp-name ) }"| ) ) ).
+    
+    
+    result = ``.
+    
+    LOOP AT components INTO comp.
+      
+      idx = sy-tabix.
+      
+      IF idx = 1.
+        temp7 = |"{ to_lower( comp-name ) }"|.
+      ELSE.
+        temp7 = |{ result },"{ to_lower( comp-name ) }"|.
+      ENDIF.
+      result = temp7.
+    ENDLOOP.
+    temp6 = result.
+    append_to_schema( temp6 ).
     append_to_schema( |],"additionalProperties":false| ).
 
     post_object( field ).
@@ -221,6 +271,9 @@ CLASS zcl_llm_tool_parser IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD process_table.
+    DATA temp7 TYPE string.
+    DATA child_field TYPE zcl_llm_tool_parser=>field_info.
+    DATA line_type TYPE REF TO cl_abap_datadescr.
     IF field-name IS NOT INITIAL.
       append_to_schema( |"{ field-name }":\{"type":"array"| ).
     ENDIF.
@@ -232,12 +285,19 @@ CLASS zcl_llm_tool_parser IMPLEMENTATION.
     ENDIF.
     append_to_schema( |,"items":\{| ).
 
-    DATA(child_field) = get_field_info( path = COND #(
-                                          WHEN field-path IS INITIAL AND field-name IS INITIAL THEN ''
-                                          WHEN field-path IS INITIAL                           THEN field-name
-                                          ELSE                                                      field-path ) ).
+    
+    IF field-path IS INITIAL AND field-name IS INITIAL.
+      temp7 = ''.
+    ELSEIF field-path IS INITIAL.
+      temp7 = field-name.
+    ELSE.
+      temp7 = field-path.
+    ENDIF.
+    
+    child_field = get_field_info( path = temp7 ).
 
-    DATA(line_type) = table_descriptor->get_table_line_type( ).
+    
+    line_type = table_descriptor->get_table_line_type( ).
     process_type( type_descriptor = line_type
                   field           = child_field ).
 
@@ -249,23 +309,35 @@ CLASS zcl_llm_tool_parser IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD process_type.
+        DATA temp8 TYPE REF TO cl_abap_structdescr.
+        DATA temp9 TYPE REF TO cl_abap_tabledescr.
+        DATA temp10 TYPE REF TO cl_abap_elemdescr.
+        DATA temp11 TYPE REF TO zcx_llm_validation.
     CASE type_descriptor->kind.
       WHEN cl_abap_typedescr=>kind_struct.
-        process_structure( structure_descriptor = CAST cl_abap_structdescr( type_descriptor )
+        
+        temp8 ?= type_descriptor.
+        process_structure( structure_descriptor = temp8
                            field                = field ).
       WHEN cl_abap_typedescr=>kind_table.
-        process_table( table_descriptor = CAST cl_abap_tabledescr( type_descriptor )
+        
+        temp9 ?= type_descriptor.
+        process_table( table_descriptor = temp9
                        field            = field ).
       WHEN cl_abap_typedescr=>kind_elem.
-        process_element( element_descriptor = CAST cl_abap_elemdescr( type_descriptor )
+        
+        temp10 ?= type_descriptor.
+        process_element( element_descriptor = temp10
                          field              = field ).
       WHEN OTHERS.
-        RAISE EXCEPTION NEW zcx_llm_validation( textid = zcx_llm_validation=>unsupported_type
-                                                attr1  = |Unsupported type: { type_descriptor->kind }| ) ##NO_TEXT.
+        
+        CREATE OBJECT temp11 TYPE zcx_llm_validation EXPORTING textid = zcx_llm_validation=>unsupported_type attr1 = |Unsupported type: { type_descriptor->kind }|.
+        RAISE EXCEPTION temp11 ##NO_TEXT.
     ENDCASE.
   ENDMETHOD.
 
   METHOD zif_llm_tool_parser~parse.
+        DATA temp12 TYPE REF TO zcx_llm_validation.
     " Check if the schema is already available, then just return it (we are called twice)
     IF schema IS NOT INITIAL.
       result = schema.
@@ -282,8 +354,9 @@ CLASS zcl_llm_tool_parser IMPLEMENTATION.
         process_type( type_descriptor = data_desc
                       field           = get_field_info( ) ).
       WHEN OTHERS.
-        RAISE EXCEPTION NEW zcx_llm_validation( textid = zcx_llm_validation=>unsupported_type
-                                                attr1  = |Unsupported type: { data_desc->kind }| ) ##NO_TEXT.
+        
+        CREATE OBJECT temp12 TYPE zcx_llm_validation EXPORTING textid = zcx_llm_validation=>unsupported_type attr1 = |Unsupported type: { data_desc->kind }|.
+        RAISE EXCEPTION temp12 ##NO_TEXT.
     ENDCASE.
 
     post_schema( ).

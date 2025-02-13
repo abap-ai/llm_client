@@ -30,8 +30,11 @@ ENDCLASS.
 CLASS ltcl_llm_call_logger IMPLEMENTATION.
 
   METHOD class_setup.
-    environment = cl_osql_test_environment=>create( VALUE #( ( 'ZLLM_SYSTEM' )
-                                                           ( 'ZLLM_CALL_LOG' ) ) ).
+    DATA temp1 TYPE if_osql_test_environment=>ty_t_sobjnames.
+    CLEAR temp1.
+    INSERT 'ZLLM_SYSTEM' INTO TABLE temp1.
+    INSERT 'ZLLM_CALL_LOG' INTO TABLE temp1.
+    environment = cl_osql_test_environment=>create( temp1 ).
   ENDMETHOD.
 
   METHOD class_teardown.
@@ -39,10 +42,11 @@ CLASS ltcl_llm_call_logger IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD setup.
-    test_entry = VALUE #( request = 'TEST_PROMPT'
-                          response = 'TEST_RESPONSE'
-                          timestamp = sy-datum
-                          uname = sy-uname ).
+    CLEAR test_entry.
+    test_entry-request = 'TEST_PROMPT'.
+    test_entry-response = 'TEST_RESPONSE'.
+    test_entry-timestamp = sy-datum.
+    test_entry-uname = sy-uname.
 
     environment->clear_doubles( ).
   ENDMETHOD.
@@ -53,21 +57,23 @@ CLASS ltcl_llm_call_logger IMPLEMENTATION.
 
   METHOD given_system_settings.
     DATA test_data TYPE STANDARD TABLE OF zllm_system.
-    APPEND VALUE #(
-      save_calls = active
-      call_filter_uname = filter_uname
-    ) TO test_data.
+    DATA temp3 TYPE zllm_system.
+    CLEAR temp3.
+    temp3-save_calls = active.
+    temp3-call_filter_uname = filter_uname.
+    APPEND temp3 TO test_data.
 
     environment->insert_test_data( test_data ).
   ENDMETHOD.
 
   METHOD when_adding_log_entry.
-    cut = NEW #( ).
+    CREATE OBJECT cut.
     cut->zif_llm_call_logger~add( test_entry ).
   ENDMETHOD.
 
   METHOD then_entry_is_logged.
-    SELECT COUNT( * ) FROM zllm_call_log INTO @DATA(actual_count). "#EC CI_NOWHERE
+    DATA actual_count TYPE i.
+    SELECT COUNT( * ) FROM zllm_call_log INTO actual_count. "#EC CI_NOWHERE
     cl_abap_unit_assert=>assert_equals(
       exp = expected_count
       act = actual_count ).

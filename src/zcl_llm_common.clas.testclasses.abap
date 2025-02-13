@@ -41,10 +41,13 @@ CLASS ltcl_llm_common IMPLEMENTATION.
 
   METHOD convert_struct_to_json.
     " Given
-    DATA(expected_json) = '{"name":"Test Name","number":42}'.
+    DATA expected_json TYPE c LENGTH 32.
+    DATA result_json TYPE string.
+    expected_json = '{"name":"Test Name","number":42}'.
 
     " When
-    DATA(result_json) = zcl_llm_common=>to_json( test_data ).
+    
+    result_json = zcl_llm_common=>to_json( test_data ).
 
     " Then
     cl_abap_unit_assert=>assert_equals(
@@ -56,8 +59,11 @@ CLASS ltcl_llm_common IMPLEMENTATION.
 
   METHOD convert_json_to_struct.
     " Given
-    DATA(input_json) = `{"name":"Test Name","number":42}`.
-    DATA(expected_structure) = test_data.
+    DATA input_json TYPE string.
+    DATA expected_structure LIKE test_data.
+    input_json = `{"name":"Test Name","number":42}`.
+    
+    expected_structure = test_data.
 
     " When
     zcl_llm_common=>from_json(
@@ -75,11 +81,19 @@ CLASS ltcl_llm_common IMPLEMENTATION.
 
   METHOD convert_empty_struct.
     " Given
-    DATA(empty_structure) = VALUE test_structure( ).
-    DATA(expected_json) = '{}'.
+    DATA temp1 TYPE test_structure.
+    DATA empty_structure LIKE temp1.
+    DATA expected_json TYPE c LENGTH 2.
+    DATA result_json TYPE string.
+    CLEAR temp1.
+    
+    empty_structure = temp1.
+    
+    expected_json = '{}'.
 
     " When
-    DATA(result_json) = zcl_llm_common=>to_json( empty_structure ).
+    
+    result_json = zcl_llm_common=>to_json( empty_structure ).
 
     " Then
     cl_abap_unit_assert=>assert_equals(

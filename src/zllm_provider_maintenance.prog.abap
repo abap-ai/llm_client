@@ -27,7 +27,7 @@ CLASS lcl_app DEFINITION.
     DATA container TYPE REF TO cl_gui_custom_container.
     DATA enc_class TYPE REF TO zif_llm_encryption.
 
-    TYPES sval_tab TYPE STANDARD TABLE OF sval WITH EMPTY KEY.
+    TYPES sval_tab TYPE STANDARD TABLE OF sval WITH DEFAULT KEY.
 
     METHODS load_providers. " Load the provider list from the database
     METHODS save_provider IMPORTING config TYPE provider_config. " Save a provider to the database
@@ -68,7 +68,7 @@ CLASS lcl_popup_screen DEFINITION.
     TYPES: BEGIN OF textline,
              line TYPE c LENGTH 255,
            END OF textline,
-           textlines TYPE STANDARD TABLE OF textline WITH EMPTY KEY.
+           textlines TYPE STANDARD TABLE OF textline WITH DEFAULT KEY.
 
     DATA provider_name        TYPE zllm_provider_name.
     DATA provider_class       TYPE zllm_provider.
@@ -103,22 +103,28 @@ CLASS lcl_app IMPLEMENTATION.
 
   METHOD load_providers.
     SELECT * FROM zllm_providers ORDER BY provider_name
-      INTO CORRESPONDING FIELDS OF TABLE @providers ##SUBRC_OK. "#EC CI_BYPASS "#EC CI_GENBUFF
+      INTO CORRESPONDING FIELDS OF TABLE providers ##SUBRC_OK. "#EC CI_BYPASS "#EC CI_GENBUFF
   ENDMETHOD.
 
   METHOD display_providers.
+      DATA temp1 TYPE lvc_s_layo.
+      DATA layout LIKE temp1.
     IF grid IS NOT BOUND.
-      grid = NEW #( i_parent = cl_gui_container=>default_screen ).
+      CREATE OBJECT grid EXPORTING i_parent = cl_gui_container=>default_screen.
 
       " Build field catalog with reusable logic
       DATA(fieldcat) = build_field_catalog( ).
 
       " Configure ALV layout
-      DATA(layout) = VALUE lvc_s_layo( sel_mode   = 'A'
-                                       zebra      = abap_true
-                                       col_opt    = abap_true
-                                       cwidth_opt = abap_true
-                                       no_toolbar = abap_true ).
+      
+      CLEAR temp1.
+      temp1-sel_mode = 'A'.
+      temp1-zebra = abap_true.
+      temp1-col_opt = abap_true.
+      temp1-cwidth_opt = abap_true.
+      temp1-no_toolbar = abap_true.
+      
+      layout = temp1.
 
       " Set ALV for display
       grid->set_table_for_first_display( EXPORTING is_layout       = layout
@@ -133,11 +139,17 @@ CLASS lcl_app IMPLEMENTATION.
 
   METHOD handle_action_add.
     DATA title TYPE string.
+    DATA temp2 TYPE lcl_app=>provider_config.
+    DATA temp3 TYPE lcl_app=>provider_config.
 
     title = 'Add Provider Configuration'(006).
 
-    popup_screen = NEW #( VALUE #( ) ).
-    popup_screen->result = VALUE #( ). " Clear any previous values
+    
+    CLEAR temp2.
+    CREATE OBJECT popup_screen EXPORTING PROVIDER = temp2.
+    
+    CLEAR temp3.
+    popup_screen->result = temp3. " Clear any previous values
     popup_screen->show( title ).
 
     IF popup_screen->cancelled = abap_false.
@@ -148,18 +160,41 @@ CLASS lcl_app IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD handle_action_change.
+    DATA selected_provider LIKE LINE OF providers.
+    DATA temp1 LIKE LINE OF providers.
+    DATA temp2 LIKE sy-tabix.
+    DATA temp3 LIKE LINE OF sel_rows.
+    DATA temp4 LIKE sy-tabix.
+    DATA title TYPE string.
     grid->get_selected_rows( IMPORTING et_index_rows = DATA(sel_rows) ).
     IF lines( sel_rows ) <> 1.
       MESSAGE 'Select one row'(014) TYPE 'E'.
     ENDIF.
 
-    DATA(selected_provider) = providers[ sel_rows[ 1 ]-index ].
+    
+    
+    
+    temp2 = sy-tabix.
+    
+    
+    temp4 = sy-tabix.
+    READ TABLE sel_rows INDEX 1 INTO temp3.
+    sy-tabix = temp4.
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
+    ENDIF.
+    READ TABLE providers INDEX temp3-index INTO temp1.
+    sy-tabix = temp2.
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
+    ENDIF.
+    selected_provider = temp1.
     selected_provider-auth_value = decrypt_auth_value( selected_provider-auth_encrypted ).
 
-    DATA title TYPE string.
+    
     title = 'Change Provider Configuration'(007).
 
-    popup_screen = NEW #( selected_provider ).
+    CREATE OBJECT popup_screen EXPORTING PROVIDER = selected_provider.
     popup_screen->result = selected_provider. " Set the current values
     popup_screen->show( title ).
 
@@ -171,21 +206,47 @@ CLASS lcl_app IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD handle_action_delete.
+    DATA selected_provider LIKE LINE OF providers.
+    DATA temp3 LIKE LINE OF providers.
+    DATA temp4 LIKE sy-tabix.
+    DATA temp5 LIKE LINE OF sel_rows.
+    DATA temp6 LIKE sy-tabix.
+    DATA title TYPE string.
+    DATA text TYPE string.
+    DATA confirmed TYPE abap_bool.
     grid->get_selected_rows( IMPORTING et_index_rows = DATA(sel_rows) ).
     IF lines( sel_rows ) <> 1.
       MESSAGE 'Select one row'(014) TYPE 'E'.
     ENDIF.
 
-    DATA(selected_provider) = providers[ sel_rows[ 1 ]-index ].
-    DATA title TYPE string.
-    DATA text  TYPE string.
+    
+    
+    
+    temp4 = sy-tabix.
+    
+    
+    temp6 = sy-tabix.
+    READ TABLE sel_rows INDEX 1 INTO temp5.
+    sy-tabix = temp6.
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
+    ENDIF.
+    READ TABLE providers INDEX temp5-index INTO temp3.
+    sy-tabix = temp4.
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
+    ENDIF.
+    selected_provider = temp3.
+    
+    
     title = 'Confirm Deletion'(010).
     text = 'Delete provider'(011).
-    DATA(confirmed) = show_confirm_popup( title = title
+    
+    confirmed = show_confirm_popup( title = title
                                           text  = |{ text } { selected_provider-provider_name }?| ).
 
     IF confirmed = abap_true.
-      DELETE FROM zllm_providers WHERE provider_name = @selected_provider-provider_name.
+      DELETE FROM zllm_providers WHERE provider_name = selected_provider-provider_name.
       IF sy-subrc = 0.
         load_providers( ).
         MESSAGE 'Provider deleted successfully'(008) TYPE 'S'.
@@ -194,7 +255,13 @@ CLASS lcl_app IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD save_provider.
-    MODIFY zllm_providers FROM @( CORRESPONDING #( config ) ).
+    DATA temp5 LIKE DATA(temp4).
+    DATA temp4 LIKE temp5.
+    CLEAR temp5.
+    MOVE-CORRESPONDING config TO temp5.
+    
+    temp4 = temp5.
+MODIFY zllm_providers FROM temp4.
     IF sy-subrc = 0.
       MESSAGE 'Provider configuration saved successfully'(009) TYPE 'S'.
     ENDIF.
@@ -209,6 +276,7 @@ CLASS lcl_app IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD build_field_catalog.
+    FIELD-SYMBOLS <fieldcat> LIKE LINE OF fieldcat.
     CALL FUNCTION 'LVC_FIELDCATALOG_MERGE'
       EXPORTING
         i_structure_name = 'ZLLM_PROVIDER_DISP'
@@ -217,7 +285,8 @@ CLASS lcl_app IMPLEMENTATION.
 
     DELETE fieldcat WHERE fieldname = 'AUTH_VALUE'.
 
-    LOOP AT fieldcat ASSIGNING FIELD-SYMBOL(<fieldcat>).
+    
+    LOOP AT fieldcat ASSIGNING <fieldcat>.
       IF <fieldcat>-fieldname <> 'PROVIDER_NAME'.
         <fieldcat>-edit = abap_true.
       ENDIF.
@@ -229,13 +298,75 @@ CLASS lcl_app IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD show_popup.
-    popup_screen = NEW #( provider = VALUE #(
-                                 provider_name        = values[ fieldname = 'PROVIDER_NAME' ]-value
-                                 provider_class       = values[ fieldname = 'PROVIDER_CLASS' ]-value
-                                 rfc_destination      = values[ fieldname = 'RFC_DESTINATION' ]-value
-                                 auth_rfc_destination = values[ fieldname = 'AUTH_RFC_DESTINATION' ]-value
-                                 auth_type            = values[ fieldname = 'AUTH_TYPE' ]-value
-                                 auth_value           = values[ fieldname = 'AUTH_VALUE' ]-value ) ).
+    DATA temp5 TYPE lcl_app=>provider_config.
+    DATA temp6 LIKE LINE OF values.
+    DATA temp7 LIKE sy-tabix.
+    DATA temp8 LIKE LINE OF values.
+    DATA temp9 LIKE sy-tabix.
+    DATA temp10 LIKE LINE OF values.
+    DATA temp11 LIKE sy-tabix.
+    DATA temp12 LIKE LINE OF values.
+    DATA temp13 LIKE sy-tabix.
+    DATA temp14 LIKE LINE OF values.
+    DATA temp15 LIKE sy-tabix.
+    DATA temp16 LIKE LINE OF values.
+    DATA temp17 LIKE sy-tabix.
+    CLEAR temp5.
+    
+    
+    temp7 = sy-tabix.
+    READ TABLE values WITH KEY fieldname = 'PROVIDER_NAME' INTO temp6.
+    sy-tabix = temp7.
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
+    ENDIF.
+    temp5-provider_name = temp6-value.
+    
+    
+    temp9 = sy-tabix.
+    READ TABLE values WITH KEY fieldname = 'PROVIDER_CLASS' INTO temp8.
+    sy-tabix = temp9.
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
+    ENDIF.
+    temp5-provider_class = temp8-value.
+    
+    
+    temp11 = sy-tabix.
+    READ TABLE values WITH KEY fieldname = 'RFC_DESTINATION' INTO temp10.
+    sy-tabix = temp11.
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
+    ENDIF.
+    temp5-rfc_destination = temp10-value.
+    
+    
+    temp13 = sy-tabix.
+    READ TABLE values WITH KEY fieldname = 'AUTH_RFC_DESTINATION' INTO temp12.
+    sy-tabix = temp13.
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
+    ENDIF.
+    temp5-auth_rfc_destination = temp12-value.
+    
+    
+    temp15 = sy-tabix.
+    READ TABLE values WITH KEY fieldname = 'AUTH_TYPE' INTO temp14.
+    sy-tabix = temp15.
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
+    ENDIF.
+    temp5-auth_type = temp14-value.
+    
+    
+    temp17 = sy-tabix.
+    READ TABLE values WITH KEY fieldname = 'AUTH_VALUE' INTO temp16.
+    sy-tabix = temp17.
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
+    ENDIF.
+    temp5-auth_value = temp16-value.
+    CREATE OBJECT popup_screen EXPORTING provider = temp5.
 
     popup_screen->show( title ).
 
@@ -245,7 +376,9 @@ CLASS lcl_app IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD show_confirm_popup.
-    DATA(answer) = ''.
+    DATA answer TYPE c LENGTH 1.
+    DATA temp1 TYPE xsdboolean.
+    answer = ''.
     CALL FUNCTION 'POPUP_TO_CONFIRM'
       EXPORTING
         titlebar      = title
@@ -255,7 +388,9 @@ CLASS lcl_app IMPLEMENTATION.
       IMPORTING
         answer        = answer.
 
-    result = xsdbool( answer = '1' ).
+    
+    temp1 = boolc( answer = '1' ).
+    result = temp1.
   ENDMETHOD.
 
   METHOD decrypt_auth_value.
@@ -282,7 +417,7 @@ ENDCLASS.
 
 CLASS lcl_screen IMPLEMENTATION.
   METHOD start.
-    app = NEW #( ).
+    CREATE OBJECT app.
     CALL SCREEN 100.
   ENDMETHOD.
 
@@ -326,10 +461,8 @@ CLASS lcl_popup_screen IMPLEMENTATION.
 
   METHOD initialize_text_editor.
     IF text_editor IS NOT BOUND.
-      custom_container = NEW #( container_name = 'CUSTOM_CONTROL' ).
-      text_editor = NEW #( parent            = custom_container
-                           wordwrap_mode     = 2
-                           wordwrap_position = 110 ).
+      CREATE OBJECT custom_container EXPORTING container_name = 'CUSTOM_CONTROL'.
+      CREATE OBJECT text_editor EXPORTING parent = custom_container wordwrap_mode = 2 wordwrap_position = 110.
       text_editor->set_toolbar_mode( 0 ).
       text_editor->set_statusbar_mode( 0 ).
       text_editor->set_readonly_mode( 0 ).
@@ -403,9 +536,10 @@ CLASS lcl_popup_screen IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD pai.
+        DATA text TYPE textlines.
     CASE ucomm.
       WHEN 'OK'.
-        DATA text TYPE textlines.
+        
         text_editor->get_text_as_r3table( IMPORTING table = text ).
 
         result-provider_name   = screen_fields-provider_name.
@@ -426,7 +560,8 @@ CLASS lcl_popup_screen IMPLEMENTATION.
 ENDCLASS.
 
 INITIALIZATION.
-  DATA(screen) = NEW lcl_screen( ).
+  DATA screen TYPE REF TO lcl_screen.
+  CREATE OBJECT screen TYPE lcl_screen.
 
 START-OF-SELECTION.
   screen->start( ).

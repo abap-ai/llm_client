@@ -18,10 +18,11 @@ ENDCLASS.
 CLASS ltcl_llm_auth_disabled IMPLEMENTATION.
 
   METHOD setup.
-    auth_checker = NEW zcl_llm_auth_disabled( ).
+    CREATE OBJECT auth_checker TYPE zcl_llm_auth_disabled.
   ENDMETHOD.
 
   METHOD test_check_decrypt.
+        DATA auth_error TYPE REF TO zcx_llm_authorization.
     TRY.
         auth_checker->check_decrypt( ).
 
@@ -29,12 +30,14 @@ CLASS ltcl_llm_auth_disabled IMPLEMENTATION.
           act = abap_true
           msg = 'Check decrypt should not raise any exception' ).
 
-      CATCH zcx_llm_authorization INTO DATA(auth_error).
+        
+      CATCH zcx_llm_authorization INTO auth_error.
         cl_abap_unit_assert=>fail( |Unexpected authorization exception: { auth_error->get_text( ) }| ).
     ENDTRY.
   ENDMETHOD.
 
   METHOD test_check_encrypt.
+        DATA auth_error TYPE REF TO zcx_llm_authorization.
     TRY.
         auth_checker->check_encrypt( ).
 
@@ -42,12 +45,14 @@ CLASS ltcl_llm_auth_disabled IMPLEMENTATION.
           act = abap_true
           msg = 'Check encrypt should not raise any exception' ).
 
-      CATCH zcx_llm_authorization INTO DATA(auth_error).
+        
+      CATCH zcx_llm_authorization INTO auth_error.
         cl_abap_unit_assert=>fail( |Unexpected authorization exception: { auth_error->get_text( ) }| ).
     ENDTRY.
   ENDMETHOD.
 
   METHOD test_check_get_client.
+        DATA auth_error TYPE REF TO zcx_llm_authorization.
     TRY.
         auth_checker->check_get_client( 'TEST' ).
 
@@ -55,12 +60,14 @@ CLASS ltcl_llm_auth_disabled IMPLEMENTATION.
           act = abap_true
           msg = 'Check get client should not raise any exception' ).
 
-      CATCH zcx_llm_authorization INTO DATA(auth_error).
+        
+      CATCH zcx_llm_authorization INTO auth_error.
         cl_abap_unit_assert=>fail( |Unexpected authorization exception: { auth_error->get_text( ) }| ).
     ENDTRY.
   ENDMETHOD.
 
   METHOD test_check_provider_maint.
+        DATA auth_error TYPE REF TO zcx_llm_authorization.
     TRY.
         auth_checker->check_provider_maintenance( ).
 
@@ -68,7 +75,8 @@ CLASS ltcl_llm_auth_disabled IMPLEMENTATION.
           act = abap_true
           msg = 'Check provider maintenance should not raise any exception' ).
 
-      CATCH zcx_llm_authorization INTO DATA(auth_error).
+        
+      CATCH zcx_llm_authorization INTO auth_error.
         cl_abap_unit_assert=>fail( |Unexpected authorization exception: { auth_error->get_text( ) }| ).
     ENDTRY.
   ENDMETHOD.

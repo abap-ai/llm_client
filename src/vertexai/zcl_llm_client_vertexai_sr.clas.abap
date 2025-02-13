@@ -37,22 +37,40 @@ ENDCLASS.
 
 CLASS zcl_llm_client_vertexai_sr IMPLEMENTATION.
   METHOD get_token.
+        DATA temp1 LIKE LINE OF jwt_tokens.
+        DATA temp2 LIKE sy-tabix.
+        DATA temp3 TYPE zcl_llm_client_vertexai_sr=>token.
     TRY.
-        result = jwt_tokens[ provider = provider ].
+        
+        
+        temp2 = sy-tabix.
+        READ TABLE jwt_tokens WITH KEY provider = provider INTO temp1.
+        sy-tabix = temp2.
+        IF sy-subrc <> 0.
+          RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
+        ENDIF.
+        result = temp1.
       CATCH cx_sy_itab_line_not_found.
         " If it does not exist we return an empty entry
-        result = VALUE #( ).
+        
+        CLEAR temp3.
+        result = temp3.
     ENDTRY.
   ENDMETHOD.
 
   METHOD if_shm_build_instance~build.
     DATA area  TYPE REF TO zcl_llm_client_vertexai_s_area.
     DATA root  TYPE REF TO zcl_llm_client_vertexai_sr.
+        DATA excep TYPE REF TO cx_shm_error.
+        DATA temp4 TYPE REF TO cx_shm_build_failed.
 
     TRY.
         area = zcl_llm_client_vertexai_s_area=>attach_for_write( ).
-      CATCH cx_shm_error INTO DATA(excep).
-        RAISE EXCEPTION NEW cx_shm_build_failed( previous = excep ).
+        
+      CATCH cx_shm_error INTO excep.
+        
+        CREATE OBJECT temp4 TYPE cx_shm_build_failed EXPORTING previous = excep.
+        RAISE EXCEPTION temp4.
     ENDTRY.
 
     CREATE OBJECT root AREA HANDLE area.
@@ -61,7 +79,10 @@ CLASS zcl_llm_client_vertexai_sr IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD set_token.
-    IF line_exists( jwt_tokens[ provider = jwt_token-provider ]  ).
+    DATA temp5 LIKE sy-subrc.
+    READ TABLE jwt_tokens WITH KEY provider = jwt_token-provider TRANSPORTING NO FIELDS.
+    temp5 = sy-subrc.
+    IF temp5 = 0.
       MODIFY TABLE jwt_tokens FROM jwt_token.
     ELSE.
       INSERT jwt_token INTO TABLE jwt_tokens.

@@ -35,8 +35,7 @@ CLASS zcl_llm_client_openai IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD get_client.
-    result = NEW zcl_llm_client_openai( client_config   = client_config
-                                        provider_config = provider_config ).
+    CREATE OBJECT result TYPE zcl_llm_client_openai EXPORTING client_config = client_config provider_config = provider_config.
   ENDMETHOD.
 
   METHOD get_chat_endpoint.
@@ -59,7 +58,7 @@ CLASS zcl_llm_client_openai IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD create_structured_output.
-    result = NEW zcl_llm_so_js_oa( ).
+    CREATE OBJECT result TYPE zcl_llm_so_js_oa.
   ENDMETHOD.
 
   METHOD get_http_client.

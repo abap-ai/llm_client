@@ -30,6 +30,9 @@ ENDCLASS.
 
 CLASS zcl_llm_http_client_wrapper IMPLEMENTATION.
   METHOD constructor.
+      DATA temp1 TYPE string.
+      DATA temp2 TYPE string.
+      DATA temp3 TYPE REF TO zcx_llm_validation.
     me->client_config   = client_config.
     me->provider_config = provider_config.
 
@@ -47,21 +50,31 @@ CLASS zcl_llm_http_client_wrapper IMPLEMENTATION.
                                                       OTHERS                   = 6 ).
 
     IF sy-subrc <> 0.
-      RAISE EXCEPTION NEW zcx_llm_validation( textid = zcx_llm_validation=>http_destination_error
-                                              attr1  = CONV #( provider_config-rfc_destination )
-                                              attr2  = SWITCH string( sy-subrc
-                                                                      WHEN 1 THEN `Argument Not Found`
-                                                                      WHEN 2 THEN `Destination Not Found`
-                                                                      WHEN 3 THEN `Destination No Authority`
-                                                                      WHEN 4 THEN `Plugin Not Active`
-                                                                      WHEN 5 THEN `Internal Error`
-                                                                      ELSE        `Others` ) ) ##NO_TEXT.
+      
+      CASE sy-subrc.
+        WHEN 1.
+          temp1 = `Argument Not Found`.
+        WHEN 2.
+          temp1 = `Destination Not Found`.
+        WHEN 3.
+          temp1 = `Destination No Authority`.
+        WHEN 4.
+          temp1 = `Plugin Not Active`.
+        WHEN 5.
+          temp1 = `Internal Error`.
+        WHEN OTHERS.
+          temp1 = `Others`.
+      ENDCASE.
+      
+      temp2 = provider_config-rfc_destination.
+      
+      CREATE OBJECT temp3 TYPE zcx_llm_validation EXPORTING textid = zcx_llm_validation=>http_destination_error attr1 = temp2 attr2 = temp1.
+      RAISE EXCEPTION temp3 ##NO_TEXT.
     ENDIF.
   ENDMETHOD.
 
   METHOD get_client.
-    client = NEW zcl_llm_http_client_wrapper( client_config   = client_config
-                                              provider_config = provider_config ).
+    CREATE OBJECT client TYPE zcl_llm_http_client_wrapper EXPORTING client_config = client_config provider_config = provider_config.
   ENDMETHOD.
 
   METHOD set_header.
@@ -79,6 +92,17 @@ CLASS zcl_llm_http_client_wrapper IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD communicate.
+    DATA timestamp TYPE timestamp.
+    DATA temp2 TYPE zllm_call_log.
+      DATA headers TYPE tihttpnvp.
+      DATA error_code TYPE i.
+      DATA error_message TYPE string.
+        DATA temp3 TYPE string.
+        DATA temp6 TYPE REF TO zcx_llm_http_error.
+        DATA temp4 TYPE string.
+        DATA temp7 TYPE REF TO zcx_llm_http_error.
+      DATA temp5 TYPE string.
+      DATA temp8 TYPE REF TO zcx_llm_http_error.
     client->request->set_method( if_http_request=>co_request_method_post ).
     client->request->set_header_field( name  = 'Content-Type'
                                        value = 'application/json' ) ##NO_TEXT.
@@ -106,21 +130,24 @@ CLASS zcl_llm_http_client_wrapper IMPLEMENTATION.
     client->response->get_status( IMPORTING code = response-code ).
     response-response = client->response->get_cdata( ).
 
-    DATA timestamp TYPE timestamp.
+    
     GET TIME STAMP FIELD timestamp.
-    call_logger->add( VALUE #( id        = session_id
-                               msg       = msg
-                               timestamp = timestamp
-                               request   = request
-                               response  = response-response
-                               uname     = sy-uname ) ).
+    
+    CLEAR temp2.
+    temp2-id = session_id.
+    temp2-msg = msg.
+    temp2-timestamp = timestamp.
+    temp2-request = request.
+    temp2-response = response-response.
+    temp2-uname = sy-uname.
+    call_logger->add( temp2 ).
 
     " Need to reset the request as otherwise the next call in this session will overwrite the
     " path prefix defined in SM59.
     IF url IS NOT INITIAL.
       " Need to save all non-SAP internal headers (SAP internal ones start with ~).
       " This ensures we keep e.g. Authorization or API-Key headers
-      DATA headers TYPE tihttpnvp.
+      
       client->request->get_header_fields( CHANGING fields = headers ).
       client->refresh_request( ).
       DELETE headers WHERE name CP '~*'.
@@ -135,21 +162,29 @@ CLASS zcl_llm_http_client_wrapper IMPLEMENTATION.
         ENDIF.
       ENDIF.
     ELSE.
-      client->get_last_error( IMPORTING code    = DATA(error_code)
-                                        message = DATA(error_message) ).
+      
+      
+      client->get_last_error( IMPORTING code    = error_code
+                                        message = error_message ).
       IF sy-subrc = 1.
-        RAISE EXCEPTION NEW zcx_llm_http_error( textid = zcx_llm_http_error=>http_communication_failure
-                                                attr1  = CONV #( error_code )
-                                                attr2  = error_message ).
+        
+        temp3 = error_code.
+        
+        CREATE OBJECT temp6 TYPE zcx_llm_http_error EXPORTING textid = zcx_llm_http_error=>http_communication_failure attr1 = temp3 attr2 = error_message.
+        RAISE EXCEPTION temp6.
       ENDIF.
       IF sy-subrc = 4.
-        RAISE EXCEPTION NEW zcx_llm_http_error( textid = zcx_llm_http_error=>http_processing_failed
-                                                attr1  = CONV #( error_code )
-                                                attr2  = error_message ).
+        
+        temp4 = error_code.
+        
+        CREATE OBJECT temp7 TYPE zcx_llm_http_error EXPORTING textid = zcx_llm_http_error=>http_processing_failed attr1 = temp4 attr2 = error_message.
+        RAISE EXCEPTION temp7.
       ENDIF.
-      RAISE EXCEPTION NEW zcx_llm_http_error( textid = zcx_llm_http_error=>http_others
-                                              attr1  = CONV #( error_code )
-                                              attr2  = error_message ).
+      
+      temp5 = error_code.
+      
+      CREATE OBJECT temp8 TYPE zcx_llm_http_error EXPORTING textid = zcx_llm_http_error=>http_others attr1 = temp5 attr2 = error_message.
+      RAISE EXCEPTION temp8.
     ENDIF.
   ENDMETHOD.
 

@@ -20,7 +20,7 @@ ENDCLASS.
 CLASS zcl_llm_default_impl IMPLEMENTATION.
   METHOD zif_llm_default_impl~get_encryption_impl.
     IF enc_class IS NOT BOUND.
-      enc_class = NEW zcl_llm_encryption( ).
+      CREATE OBJECT enc_class TYPE zcl_llm_encryption.
     ENDIF.
     result = enc_class.
   ENDMETHOD.
@@ -31,21 +31,21 @@ CLASS zcl_llm_default_impl IMPLEMENTATION.
 
   METHOD zif_llm_default_impl~get_call_logger_impl.
     IF log_class IS NOT BOUND.
-      log_class = NEW zcl_llm_call_logger( ).
+      CREATE OBJECT log_class TYPE zcl_llm_call_logger.
     ENDIF.
     result = log_class.
   ENDMETHOD.
 
   METHOD zif_llm_default_impl~get_statistics_impl.
     IF stat_class IS NOT BOUND.
-      stat_class = NEW zcl_llm_statistics( ).
+      CREATE OBJECT stat_class TYPE zcl_llm_statistics.
     ENDIF.
     result = stat_class.
   ENDMETHOD.
 
   METHOD zif_llm_default_impl~get_authorization_impl.
     IF auth_class IS NOT BOUND.
-      auth_class = NEW zcl_llm_auth_disabled( ).
+      CREATE OBJECT auth_class TYPE zcl_llm_auth_disabled.
     ENDIF.
     result = auth_class.
   ENDMETHOD.

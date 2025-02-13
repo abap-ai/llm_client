@@ -46,8 +46,7 @@ CLASS zcl_llm_client_azureaif IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD get_client.
-    result = NEW zcl_llm_client_azureaif( client_config   = client_config
-                                          provider_config = provider_config ).
+    CREATE OBJECT result TYPE zcl_llm_client_azureaif EXPORTING client_config = client_config provider_config = provider_config.
   ENDMETHOD.
 
   METHOD get_http_client.
@@ -72,7 +71,7 @@ CLASS zcl_llm_client_azureaif IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD create_structured_output.
-    result = NEW zcl_llm_so_js_azureoai( ).
+    CREATE OBJECT result TYPE zcl_llm_so_js_azureoai.
   ENDMETHOD.
 
   METHOD get_chat_endpoint.
@@ -80,18 +79,30 @@ CLASS zcl_llm_client_azureaif IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD build_request_json.
+    DATA first_line TYPE abap_bool VALUE abap_true.
+    DATA messages LIKE request-messages.
+    DATA lines TYPE i.
+    DATA current_line TYPE i.
+    DATA message LIKE LINE OF messages.
+      FIELD-SYMBOLS <tool> LIKE LINE OF request-tools.
+        DATA details TYPE zif_llm_tool=>tool_details.
+    DATA option_parameters TYPE zllm_keyvalues.
+    DATA parameter LIKE LINE OF option_parameters.
     " Open content
     result = |\{"model":"{ client_config-provider_model }","messages":[|.
-    DATA first_line TYPE abap_bool VALUE abap_true.
+    
 
-    DATA(messages) = request-messages.
+    
+    messages = request-messages.
 
     " Add messages
     " Note that Azure AI Foundry does not support defining the structured output in the API.
     " We need to set it to json mode and in addition specify the format in the prompt.
-    DATA(lines) = lines( messages ).
-    DATA current_line TYPE i.
-    LOOP AT messages INTO DATA(message).
+    
+    lines = lines( messages ).
+    
+    
+    LOOP AT messages INTO message.
       current_line = current_line + 1.
       IF current_line = lines AND request-use_structured_output = abap_true.
         " As mentioned above add the json format to the prompt.
@@ -116,8 +127,10 @@ CLASS zcl_llm_client_azureaif IMPLEMENTATION.
     IF lines( request-tools ) > 0 AND request-tool_choice <> zif_llm_chat_request=>tool_choice_none.
       result = |{ result },"tools":[|.
       first_line = abap_true.
-      LOOP AT request-tools ASSIGNING FIELD-SYMBOL(<tool>).
-        DATA(details) = <tool>->get_tool_details( ).
+      
+      LOOP AT request-tools ASSIGNING <tool>.
+        
+        details = <tool>->get_tool_details( ).
         IF first_line = abap_true.
           result = |{ result }\{"type":"{ details-type }","{ details-type }":\{"name":"{ details-name }"|
                 && |,"description":"{ details-description }","parameters":|
@@ -146,8 +159,10 @@ CLASS zcl_llm_client_azureaif IMPLEMENTATION.
     ENDIF.
 
     " Add options if available
-    DATA(option_parameters) = request-options->get_paramters( ).
-    LOOP AT option_parameters INTO DATA(parameter).
+    
+    option_parameters = request-options->get_paramters( ).
+    
+    LOOP AT option_parameters INTO parameter.
       result = |{ result },"{ parameter-key }":{ parameter-value }|.
     ENDLOOP.
 

@@ -19,7 +19,7 @@ CLASS zcl_llm_tool_calculator DEFINITION
              value     TYPE string,
              is_number TYPE abap_bool,
            END OF token.
-    TYPES tokens TYPE STANDARD TABLE OF token WITH EMPTY KEY.
+    TYPES tokens TYPE STANDARD TABLE OF token WITH DEFAULT KEY.
 
     METHODS evaluate_expression
       IMPORTING expression    TYPE string
@@ -86,23 +86,31 @@ ENDCLASS.
 CLASS zcl_llm_tool_calculator IMPLEMENTATION.
   METHOD zif_llm_tool~get_tool_details.
     DATA parameters TYPE zif_llm_tool=>tool_parameters.
+    DATA temp1 TYPE zif_llm_tool_parser=>def_descriptions.
+    DATA temp2 LIKE LINE OF temp1.
 
     parameters-data_desc    ?= cl_abap_typedescr=>describe_by_name( 'CALCULATION_INPUT' ).
 
-    parameters-descriptions  = VALUE #(
-        ( fieldname   = 'EXPRESSION'
-          description = 'Mathematical expression to evaluate. Supports +, -, *, /, **, MOD and parentheses' ) ) ##NO_TEXT.
+    
+    CLEAR temp1.
+    
+    temp2-fieldname = 'EXPRESSION'.
+    temp2-description = 'Mathematical expression to evaluate. Supports +, -, *, /, **, MOD and parentheses'.
+    INSERT temp2 INTO TABLE temp1.
+    parameters-descriptions  = temp1 ##NO_TEXT.
 
-    result = VALUE #( name        = 'calculator'
-                      description = 'Evaluates mathematical expressions. Supports +, -, *, /, **, MOD and parentheses'
-                      type        = zif_llm_tool=>type_function
-                      parameters  = parameters ) ##NO_TEXT.
+    CLEAR result.
+    result-name = 'calculator'.
+    result-description = 'Evaluates mathematical expressions. Supports +, -, *, /, **, MOD and parentheses'.
+    result-type = zif_llm_tool=>type_function.
+    result-parameters = parameters.
   ENDMETHOD.
 
   METHOD zif_llm_tool~execute.
     DATA input TYPE calculation_input.
 
-    ASSIGN data->* TO FIELD-SYMBOL(<data>).
+    FIELD-SYMBOLS <data> TYPE data.
+    ASSIGN data->* TO <data>.
     input = <data>.
 
     TRY.
@@ -114,28 +122,38 @@ CLASS zcl_llm_tool_calculator IMPLEMENTATION.
     ENDTRY.
 
     me->tool_call_id = tool_call_id.
-    result-data         = REF #( output ).
+    GET REFERENCE OF output INTO result-data.
     result-name         = `calculator`.
     result-tool_call_id = tool_call_id.
   ENDMETHOD.
 
   METHOD zif_llm_tool~get_result.
-    result = VALUE #( data         = REF #( output )
-                      tool_call_id = tool_call_id
-                      name         = `calculator` ).
+    CLEAR result.
+    GET REFERENCE OF output INTO result-data.
+    result-tool_call_id = tool_call_id.
+    result-name = `calculator`.
   ENDMETHOD.
 
   METHOD evaluate_expression.
+      DATA temp3 TYPE REF TO cx_sy_conversion_no_number.
+    DATA cleaned_expr TYPE string.
+    DATA tokens TYPE zcl_llm_tool_calculator=>tokens.
+    DATA calc_result TYPE decfloat34.
     IF expression IS INITIAL.
-      RAISE EXCEPTION NEW cx_sy_conversion_no_number( ).
+      
+      CREATE OBJECT temp3 TYPE cx_sy_conversion_no_number.
+      RAISE EXCEPTION temp3.
     ENDIF.
 
-    DATA(cleaned_expr) = replace( val   = expression
+    
+    cleaned_expr = replace( val   = expression
                                   regex = `\s`
                                   with  = ``
                                   occ   = 0 ).
-    DATA(tokens) = tokenize( cleaned_expr ).
-    DATA(calc_result) = evaluate_tokens( tokens ).
+    
+    tokens = tokenize( cleaned_expr ).
+    
+    calc_result = evaluate_tokens( tokens ).
     result = |{ calc_result NUMBER = USER }|.
   ENDMETHOD.
 
@@ -145,6 +163,31 @@ CLASS zcl_llm_tool_calculator IMPLEMENTATION.
     DATA length        TYPE i.
     DATA index         TYPE i VALUE 0.
     DATA next_pos      TYPE i.
+          DATA temp4 TYPE zcl_llm_tool_calculator=>token.
+            DATA temp5 TYPE zcl_llm_tool_calculator=>token.
+              DATA temp6 TYPE zcl_llm_tool_calculator=>token.
+              DATA temp7 TYPE zcl_llm_tool_calculator=>token.
+            DATA temp8 TYPE zcl_llm_tool_calculator=>token.
+          DATA temp9 LIKE LINE OF result.
+          DATA temp10 LIKE sy-tabix.
+          DATA temp1 LIKE LINE OF result.
+          DATA temp2 LIKE sy-tabix.
+          DATA temp16 LIKE LINE OF result.
+          DATA temp17 LIKE sy-tabix.
+          DATA temp18 LIKE LINE OF result.
+          DATA temp19 LIKE sy-tabix.
+          DATA temp20 LIKE LINE OF result.
+          DATA temp21 LIKE sy-tabix.
+          DATA temp22 LIKE LINE OF result.
+          DATA temp23 LIKE sy-tabix.
+          DATA temp24 LIKE LINE OF result.
+          DATA temp25 LIKE sy-tabix.
+              DATA temp11 TYPE zcl_llm_tool_calculator=>token.
+              DATA temp12 TYPE zcl_llm_tool_calculator=>token.
+            DATA temp13 TYPE zcl_llm_tool_calculator=>token.
+          DATA temp14 TYPE undefined.
+          DATA temp3 TYPE REF TO cx_sy_conversion_no_number.
+      DATA temp15 TYPE REF TO cx_sy_conversion_no_number.
 
     length = strlen( expression ) - 1.
 
@@ -159,45 +202,116 @@ CLASS zcl_llm_tool_calculator IMPLEMENTATION.
             index = index + 1.
           ENDWHILE.
           index = index - 1.
-          APPEND VALUE #( value     = current_token
-                          is_number = abap_true ) TO result.
+          
+          CLEAR temp4.
+          temp4-value = current_token.
+          temp4-is_number = abap_true.
+          APPEND temp4 TO result.
 
         WHEN '(' OR ')' OR '+' OR '*' OR '/' OR 'M'.
           " Check for MOD operator
           IF     current_char         = 'M'
              AND index + 2           <= length
              AND expression+index(3)  = 'MOD'.
-            APPEND VALUE #( value     = 'MOD'
-                            is_number = abap_false ) TO result.
+            
+            CLEAR temp5.
+            temp5-value = 'MOD'.
+            temp5-is_number = abap_false.
+            APPEND temp5 TO result.
             index = index + 2.
             " Check for ** operator
           ELSEIF     current_char = '*'
                  AND index        < length.
             next_pos = index + 1.
             IF expression+next_pos(1) = '*'.
-              APPEND VALUE #( value     = '**'
-                              is_number = abap_false ) TO result.
+              
+              CLEAR temp6.
+              temp6-value = '**'.
+              temp6-is_number = abap_false.
+              APPEND temp6 TO result.
               index = index + 1.
             ELSE.
-              APPEND VALUE #( value     = current_char
-                              is_number = abap_false ) TO result.
+              
+              CLEAR temp7.
+              temp7-value = current_char.
+              temp7-is_number = abap_false.
+              APPEND temp7 TO result.
             ENDIF.
           ELSE.
-            APPEND VALUE #( value     = current_char
-                            is_number = abap_false ) TO result.
+            
+            CLEAR temp8.
+            temp8-value = current_char.
+            temp8-is_number = abap_false.
+            APPEND temp8 TO result.
           ENDIF.
 
         WHEN '-'.
           " Check if this is a negative number (when it's the first token or follows an operator or opening parenthesis)
+          
+          
+          temp10 = sy-tabix.
+          READ TABLE result INDEX lines( result ) INTO temp9.
+          sy-tabix = temp10.
+          IF sy-subrc <> 0.
+            RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
+          ENDIF.
+          
+          
+          temp2 = sy-tabix.
+          READ TABLE result INDEX lines( result ) INTO temp1.
+          sy-tabix = temp2.
+          IF sy-subrc <> 0.
+            RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
+          ENDIF.
+          
+          
+          temp17 = sy-tabix.
+          READ TABLE result INDEX lines( result ) INTO temp16.
+          sy-tabix = temp17.
+          IF sy-subrc <> 0.
+            RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
+          ENDIF.
+          
+          
+          temp19 = sy-tabix.
+          READ TABLE result INDEX lines( result ) INTO temp18.
+          sy-tabix = temp19.
+          IF sy-subrc <> 0.
+            RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
+          ENDIF.
+          
+          
+          temp21 = sy-tabix.
+          READ TABLE result INDEX lines( result ) INTO temp20.
+          sy-tabix = temp21.
+          IF sy-subrc <> 0.
+            RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
+          ENDIF.
+          
+          
+          temp23 = sy-tabix.
+          READ TABLE result INDEX lines( result ) INTO temp22.
+          sy-tabix = temp23.
+          IF sy-subrc <> 0.
+            RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
+          ENDIF.
+          
+          
+          temp25 = sy-tabix.
+          READ TABLE result INDEX lines( result ) INTO temp24.
+          sy-tabix = temp25.
+          IF sy-subrc <> 0.
+            RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
+          ENDIF.
           IF    result IS INITIAL
              OR (     lines( result ) > 0
-                  AND (    result[ lines( result ) ]-value = '('
-                        OR result[ lines( result ) ]-value = '+'
-                        OR result[ lines( result ) ]-value = '-'
-                        OR result[ lines( result ) ]-value = '*'
-                        OR result[ lines( result ) ]-value = '/'
-                        OR result[ lines( result ) ]-value = '**'
-                        OR result[ lines( result ) ]-value = 'MOD' ) ).
+                  AND (    temp9-value = '('
+                        OR temp1-value = '+'
+                        OR temp16-value = '-'
+                        OR temp18-value = '*'
+                        OR temp20-value = '/'
+                        OR temp22-value = '**'
+                        OR temp24-value = 'MOD' ) ).
             " This is a negative number - read the number part
             next_pos = index + 1.
             IF next_pos <= length AND expression+next_pos(1) CA '0123456789.'.
@@ -208,17 +322,26 @@ CLASS zcl_llm_tool_calculator IMPLEMENTATION.
                 index = index + 1.
               ENDWHILE.
               index = index - 1.
-              APPEND VALUE #( value     = current_token
-                              is_number = abap_true ) TO result.
+              
+              CLEAR temp11.
+              temp11-value = current_token.
+              temp11-is_number = abap_true.
+              APPEND temp11 TO result.
             ELSE.
               " Just a minus operator
-              APPEND VALUE #( value     = current_char
-                              is_number = abap_false ) TO result.
+              
+              CLEAR temp12.
+              temp12-value = current_char.
+              temp12-is_number = abap_false.
+              APPEND temp12 TO result.
             ENDIF.
           ELSE.
             " Just a minus operator
-            APPEND VALUE #( value     = current_char
-                            is_number = abap_false ) TO result.
+            
+            CLEAR temp13.
+            temp13-value = current_char.
+            temp13-is_number = abap_false.
+            APPEND temp13 TO result.
           ENDIF.
 
         WHEN space.
@@ -227,14 +350,20 @@ CLASS zcl_llm_tool_calculator IMPLEMENTATION.
 
         WHEN OTHERS.
           " Raise exception for invalid characters
-          RAISE EXCEPTION NEW cx_sy_conversion_no_number( value = CONV #( current_char ) ).
+          
+          temp14 = current_char.
+          
+          CREATE OBJECT temp3 TYPE cx_sy_conversion_no_number EXPORTING value = temp14.
+          RAISE EXCEPTION temp3.
       ENDCASE.
       index = index + 1.
     ENDWHILE.
 
     " If no tokens were created, raise an exception
     IF result IS INITIAL.
-      RAISE EXCEPTION NEW cx_sy_conversion_no_number( ).
+      
+      CREATE OBJECT temp15 TYPE cx_sy_conversion_no_number.
+      RAISE EXCEPTION temp15.
     ENDIF.
   ENDMETHOD.
 
@@ -258,7 +387,10 @@ CLASS zcl_llm_tool_calculator IMPLEMENTATION.
     DATA popped_operator TYPE string. "For pop_from_stack
 
     " Shunting yard algorithm
-    LOOP AT tokens INTO DATA(token).
+    DATA token LIKE LINE OF tokens.
+          DATA temp16 TYPE zcl_llm_tool_calculator=>token.
+      DATA temp17 TYPE zcl_llm_tool_calculator=>token.
+    LOOP AT tokens INTO token.
       IF token-is_number = abap_true.
         APPEND token TO output_queue.
       ELSEIF token-value = '('.
@@ -267,8 +399,11 @@ CLASS zcl_llm_tool_calculator IMPLEMENTATION.
         peek_stack( IMPORTING result = peeked_operator CHANGING stack = operator_stack  ). "Get Top of stack
         WHILE operator_stack IS NOT INITIAL AND peeked_operator <> '('.
           pop_from_stack( IMPORTING result = popped_operator CHANGING stack = operator_stack ).
-          APPEND VALUE #( value     = popped_operator
-                          is_number = abap_false )
+          
+          CLEAR temp16.
+          temp16-value = popped_operator.
+          temp16-is_number = abap_false.
+          APPEND temp16
                  TO output_queue.
           peek_stack( IMPORTING result = peeked_operator CHANGING stack = operator_stack ). "Check Top of stack again
         ENDWHILE.
@@ -285,8 +420,11 @@ CLASS zcl_llm_tool_calculator IMPLEMENTATION.
     " Move remaining operators to output
     WHILE operator_stack IS NOT INITIAL.
       pop_from_stack( IMPORTING result = popped_operator CHANGING stack = operator_stack ).
-      APPEND VALUE #( value     = popped_operator
-                      is_number = abap_false )
+      
+      CLEAR temp17.
+      temp17-value = popped_operator.
+      temp17-is_number = abap_false.
+      APPEND temp17
              TO output_queue.
     ENDWHILE.
 
@@ -297,6 +435,7 @@ CLASS zcl_llm_tool_calculator IMPLEMENTATION.
   METHOD process_operator.
     DATA peeked_operator TYPE string.
     DATA popped_operator TYPE string.
+      DATA temp18 TYPE zcl_llm_tool_calculator=>token.
 
     peek_stack( IMPORTING result = peeked_operator CHANGING  stack = operator_stack ).
     WHILE     operator_stack IS NOT INITIAL
@@ -304,8 +443,11 @@ CLASS zcl_llm_tool_calculator IMPLEMENTATION.
           AND get_operator_precedence( peeked_operator ) >=
               get_operator_precedence( operator ).
       pop_from_stack( IMPORTING result = popped_operator CHANGING stack = operator_stack ).
-      APPEND VALUE #( value     = popped_operator
-                      is_number = abap_false )
+      
+      CLEAR temp18.
+      temp18-value = popped_operator.
+      temp18-is_number = abap_false.
+      APPEND temp18
              TO output_queue.
       peek_stack( IMPORTING result = peeked_operator CHANGING  stack = operator_stack ). "Check for next iteration
     ENDWHILE.
@@ -317,17 +459,44 @@ CLASS zcl_llm_tool_calculator IMPLEMENTATION.
     DATA operand1    TYPE decfloat34.
     DATA operand2    TYPE decfloat34.
 
-    LOOP AT tokens INTO DATA(token).
+    DATA token LIKE LINE OF tokens.
+          DATA temp19 TYPE REF TO cx_sy_conversion_no_number.
+        DATA temp20 LIKE LINE OF value_stack.
+        DATA temp21 LIKE sy-tabix.
+        DATA temp22 LIKE LINE OF value_stack.
+        DATA temp23 LIKE sy-tabix.
+      DATA temp24 LIKE LINE OF value_stack.
+      DATA temp25 LIKE sy-tabix.
+      DATA temp26 TYPE REF TO cx_sy_conversion_no_number.
+    LOOP AT tokens INTO token.
       IF token-is_number = abap_true.
         APPEND parse_number( token-value ) TO value_stack.
       ELSE.
         IF lines( value_stack ) < 2.
-          RAISE EXCEPTION NEW cx_sy_conversion_no_number( ).
+          
+          CREATE OBJECT temp19 TYPE cx_sy_conversion_no_number.
+          RAISE EXCEPTION temp19.
         ENDIF.
 
-        operand2 = value_stack[ lines( value_stack ) ].
+        
+        
+        temp21 = sy-tabix.
+        READ TABLE value_stack INDEX lines( value_stack ) INTO temp20.
+        sy-tabix = temp21.
+        IF sy-subrc <> 0.
+          RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
+        ENDIF.
+        operand2 = temp20.
         DELETE value_stack INDEX lines( value_stack ).
-        operand1 = value_stack[ lines( value_stack ) ].
+        
+        
+        temp23 = sy-tabix.
+        READ TABLE value_stack INDEX lines( value_stack ) INTO temp22.
+        sy-tabix = temp23.
+        IF sy-subrc <> 0.
+          RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
+        ENDIF.
+        operand1 = temp22.
         DELETE value_stack INDEX lines( value_stack ).
 
         APPEND apply_operator( operator = token-value
@@ -338,16 +507,37 @@ CLASS zcl_llm_tool_calculator IMPLEMENTATION.
     ENDLOOP.
 
     IF lines( value_stack ) = 1.
-      result = value_stack[ 1 ].
+      
+      
+      temp25 = sy-tabix.
+      READ TABLE value_stack INDEX 1 INTO temp24.
+      sy-tabix = temp25.
+      IF sy-subrc <> 0.
+        RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
+      ENDIF.
+      result = temp24.
     ELSE.
-      RAISE EXCEPTION NEW cx_sy_conversion_no_number( ).
+      
+      CREATE OBJECT temp26 TYPE cx_sy_conversion_no_number.
+      RAISE EXCEPTION temp26.
     ENDIF.
   ENDMETHOD.
 
   METHOD pop_from_stack.
-    DATA(last_index) = lines( stack ).
+    DATA last_index TYPE i.
+      DATA temp27 LIKE LINE OF stack.
+      DATA temp28 LIKE sy-tabix.
+    last_index = lines( stack ).
     IF last_index > 0.
-      result = stack[ last_index ].  " Assign to the EXPORTING parameter
+      
+      
+      temp28 = sy-tabix.
+      READ TABLE stack INDEX last_index INTO temp27.
+      sy-tabix = temp28.
+      IF sy-subrc <> 0.
+        RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
+      ENDIF.
+      result = temp27.  " Assign to the EXPORTING parameter
       DELETE stack INDEX last_index.
     ELSE.
       CLEAR result. "Clear in case of empty stack
@@ -355,19 +545,36 @@ CLASS zcl_llm_tool_calculator IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD peek_stack.
-    DATA(last_index) = lines( stack ).
+    DATA last_index TYPE i.
+      DATA temp29 LIKE LINE OF stack.
+      DATA temp30 LIKE sy-tabix.
+    last_index = lines( stack ).
     IF last_index > 0.
-      result = stack[ last_index ]. " Assign to the EXPORTING parameter
+      
+      
+      temp30 = sy-tabix.
+      READ TABLE stack INDEX last_index INTO temp29.
+      sy-tabix = temp30.
+      IF sy-subrc <> 0.
+        RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
+      ENDIF.
+      result = temp29. " Assign to the EXPORTING parameter
     ELSE.
       CLEAR result. "Clear Result
     ENDIF.
   ENDMETHOD.
 
   METHOD parse_number.
-    result = CONV decfloat34( number_string ).
+    DATA temp31 TYPE decfloat34.
+    temp31 = number_string.
+    result = temp31.
   ENDMETHOD.
 
   METHOD apply_operator.
+          DATA temp32 TYPE REF TO cx_sy_zerodivide.
+            DATA temp33 TYPE REF TO cx_sy_zerodivide.
+          DATA temp34 TYPE REF TO cx_sy_zerodivide.
+        DATA temp35 TYPE REF TO cx_sy_conversion_no_number.
     CASE operator.
       WHEN '+'.
         result = operand1 + operand2.
@@ -377,14 +584,18 @@ CLASS zcl_llm_tool_calculator IMPLEMENTATION.
         result = operand1 * operand2.
       WHEN '/'.
         IF operand2 = 0.
-          RAISE EXCEPTION NEW cx_sy_zerodivide( ).
+          
+          CREATE OBJECT temp32 TYPE cx_sy_zerodivide.
+          RAISE EXCEPTION temp32.
         ENDIF.
         result = operand1 / operand2.
       WHEN '**'.
         " Handle negative exponents
         IF operand2 < 0.
           IF operand1 = 0.
-            RAISE EXCEPTION NEW cx_sy_zerodivide( ).
+            
+            CREATE OBJECT temp33 TYPE cx_sy_zerodivide.
+            RAISE EXCEPTION temp33.
           ENDIF.
           result = 1 / ( operand1 ** abs( operand2 ) ).
         ELSE.
@@ -392,11 +603,15 @@ CLASS zcl_llm_tool_calculator IMPLEMENTATION.
         ENDIF.
       WHEN 'MOD'.
         IF operand2 = 0.
-          RAISE EXCEPTION NEW cx_sy_zerodivide( ).
+          
+          CREATE OBJECT temp34 TYPE cx_sy_zerodivide.
+          RAISE EXCEPTION temp34.
         ENDIF.
         result = operand1 - ( operand2 * trunc( operand1 / operand2 ) ).
       WHEN OTHERS.
-        RAISE EXCEPTION NEW cx_sy_conversion_no_number( ).
+        
+        CREATE OBJECT temp35 TYPE cx_sy_conversion_no_number.
+        RAISE EXCEPTION temp35.
     ENDCASE.
   ENDMETHOD.
 

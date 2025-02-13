@@ -24,18 +24,30 @@ ENDCLASS.
 
 CLASS ltcl_calculator_tool IMPLEMENTATION.
   METHOD setup.
-    calculator = NEW #( ).
+    CREATE OBJECT calculator.
   ENDMETHOD.
 
   METHOD addition.
-    DATA(input) = VALUE zcl_llm_tool_calculator=>calculation_input( expression = '2 + 2' ).
+    DATA temp36 TYPE zcl_llm_tool_calculator=>calculation_input.
+    DATA input LIKE temp36.
+    DATA data LIKE REF TO input.
+    DATA result TYPE zif_llm_tool=>tool_result.
+    DATA output TYPE zcl_llm_tool_calculator=>calculation_output.
+    FIELD-SYMBOLS <output> TYPE data.
+    CLEAR temp36.
+    temp36-expression = '2 + 2'.
+    
+    input = temp36.
 
-    DATA(data) = REF #( input ).
-    DATA(result) = calculator->zif_llm_tool~execute( data         = data
+    
+    GET REFERENCE OF input INTO data.
+    
+    result = calculator->zif_llm_tool~execute( data         = data
                                                      tool_call_id = 'test_id' ).
 
-    DATA output TYPE zcl_llm_tool_calculator=>calculation_output.
-    ASSIGN result-data->* TO FIELD-SYMBOL(<output>).
+    
+    
+    ASSIGN result-data->* TO <output>.
     output = <output>.
 
     cl_abap_unit_assert=>assert_equals( exp = '4'
@@ -43,14 +55,26 @@ CLASS ltcl_calculator_tool IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD subtraction.
-    DATA(input) = VALUE zcl_llm_tool_calculator=>calculation_input( expression = '5 - 3' ).
+    DATA temp37 TYPE zcl_llm_tool_calculator=>calculation_input.
+    DATA input LIKE temp37.
+    DATA data LIKE REF TO input.
+    DATA result TYPE zif_llm_tool=>tool_result.
+    DATA output TYPE zcl_llm_tool_calculator=>calculation_output.
+    FIELD-SYMBOLS <output> TYPE data.
+    CLEAR temp37.
+    temp37-expression = '5 - 3'.
+    
+    input = temp37.
 
-    DATA(data) = REF #( input ).
-    DATA(result) = calculator->zif_llm_tool~execute( data         = data
+    
+    GET REFERENCE OF input INTO data.
+    
+    result = calculator->zif_llm_tool~execute( data         = data
                                                      tool_call_id = 'test_id' ).
 
-    DATA output TYPE zcl_llm_tool_calculator=>calculation_output.
-    ASSIGN result-data->* TO FIELD-SYMBOL(<output>).
+    
+    
+    ASSIGN result-data->* TO <output>.
     output = <output>.
 
     cl_abap_unit_assert=>assert_equals( exp = '2'
@@ -58,14 +82,26 @@ CLASS ltcl_calculator_tool IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD multiplication.
-    DATA(input) = VALUE zcl_llm_tool_calculator=>calculation_input( expression = '4 * 3' ).
+    DATA temp38 TYPE zcl_llm_tool_calculator=>calculation_input.
+    DATA input LIKE temp38.
+    DATA data LIKE REF TO input.
+    DATA result TYPE zif_llm_tool=>tool_result.
+    DATA output TYPE zcl_llm_tool_calculator=>calculation_output.
+    FIELD-SYMBOLS <output> TYPE data.
+    CLEAR temp38.
+    temp38-expression = '4 * 3'.
+    
+    input = temp38.
 
-    DATA(data) = REF #( input ).
-    DATA(result) = calculator->zif_llm_tool~execute( data         = data
+    
+    GET REFERENCE OF input INTO data.
+    
+    result = calculator->zif_llm_tool~execute( data         = data
                                                      tool_call_id = 'test_id' ).
 
-    DATA output TYPE zcl_llm_tool_calculator=>calculation_output.
-    ASSIGN result-data->* TO FIELD-SYMBOL(<output>).
+    
+    
+    ASSIGN result-data->* TO <output>.
     output = <output>.
 
     cl_abap_unit_assert=>assert_equals( exp = '12'
@@ -73,14 +109,26 @@ CLASS ltcl_calculator_tool IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD division.
-    DATA(input) = VALUE zcl_llm_tool_calculator=>calculation_input( expression = '10 / 2' ).
+    DATA temp39 TYPE zcl_llm_tool_calculator=>calculation_input.
+    DATA input LIKE temp39.
+    DATA data LIKE REF TO input.
+    DATA result TYPE zif_llm_tool=>tool_result.
+    DATA output TYPE zcl_llm_tool_calculator=>calculation_output.
+    FIELD-SYMBOLS <output> TYPE data.
+    CLEAR temp39.
+    temp39-expression = '10 / 2'.
+    
+    input = temp39.
 
-    DATA(data) = REF #( input ).
-    DATA(result) = calculator->zif_llm_tool~execute( data         = data
+    
+    GET REFERENCE OF input INTO data.
+    
+    result = calculator->zif_llm_tool~execute( data         = data
                                                      tool_call_id = 'test_id' ).
 
-    DATA output TYPE zcl_llm_tool_calculator=>calculation_output.
-    ASSIGN result-data->* TO FIELD-SYMBOL(<output>).
+    
+    
+    ASSIGN result-data->* TO <output>.
     output = <output>.
 
     cl_abap_unit_assert=>assert_equals( exp = '5'
@@ -88,14 +136,26 @@ CLASS ltcl_calculator_tool IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD power.
-    DATA(input) = VALUE zcl_llm_tool_calculator=>calculation_input( expression = '2 ** 3' ).
+    DATA temp40 TYPE zcl_llm_tool_calculator=>calculation_input.
+    DATA input LIKE temp40.
+    DATA data LIKE REF TO input.
+    DATA result TYPE zif_llm_tool=>tool_result.
+    DATA output TYPE zcl_llm_tool_calculator=>calculation_output.
+    FIELD-SYMBOLS <output> TYPE data.
+    CLEAR temp40.
+    temp40-expression = '2 ** 3'.
+    
+    input = temp40.
 
-    DATA(data) = REF #( input ).
-    DATA(result) = calculator->zif_llm_tool~execute( data         = data
+    
+    GET REFERENCE OF input INTO data.
+    
+    result = calculator->zif_llm_tool~execute( data         = data
                                                      tool_call_id = 'test_id' ).
 
-    DATA output TYPE zcl_llm_tool_calculator=>calculation_output.
-    ASSIGN result-data->* TO FIELD-SYMBOL(<output>).
+    
+    
+    ASSIGN result-data->* TO <output>.
     output = <output>.
 
     cl_abap_unit_assert=>assert_equals( exp = '8'
@@ -103,14 +163,26 @@ CLASS ltcl_calculator_tool IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD modulo.
-    DATA(input) = VALUE zcl_llm_tool_calculator=>calculation_input( expression = '10 MOD 3' ).
+    DATA temp41 TYPE zcl_llm_tool_calculator=>calculation_input.
+    DATA input LIKE temp41.
+    DATA data LIKE REF TO input.
+    DATA result TYPE zif_llm_tool=>tool_result.
+    DATA output TYPE zcl_llm_tool_calculator=>calculation_output.
+    FIELD-SYMBOLS <output> TYPE data.
+    CLEAR temp41.
+    temp41-expression = '10 MOD 3'.
+    
+    input = temp41.
 
-    DATA(data) = REF #( input ).
-    DATA(result) = calculator->zif_llm_tool~execute( data         = data
+    
+    GET REFERENCE OF input INTO data.
+    
+    result = calculator->zif_llm_tool~execute( data         = data
                                                      tool_call_id = 'test_id' ).
 
-    DATA output TYPE zcl_llm_tool_calculator=>calculation_output.
-    ASSIGN result-data->* TO FIELD-SYMBOL(<output>).
+    
+    
+    ASSIGN result-data->* TO <output>.
     output = <output>.
 
     cl_abap_unit_assert=>assert_equals( exp = '1'
@@ -118,14 +190,26 @@ CLASS ltcl_calculator_tool IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD complex_expression.
-    DATA(input) = VALUE zcl_llm_tool_calculator=>calculation_input( expression = '(5 + 3) * 2 - 4' ).
+    DATA temp42 TYPE zcl_llm_tool_calculator=>calculation_input.
+    DATA input LIKE temp42.
+    DATA data LIKE REF TO input.
+    DATA result TYPE zif_llm_tool=>tool_result.
+    DATA output TYPE zcl_llm_tool_calculator=>calculation_output.
+    FIELD-SYMBOLS <output> TYPE data.
+    CLEAR temp42.
+    temp42-expression = '(5 + 3) * 2 - 4'.
+    
+    input = temp42.
 
-    DATA(data) = REF #( input ).
-    DATA(result) = calculator->zif_llm_tool~execute( data         = data
+    
+    GET REFERENCE OF input INTO data.
+    
+    result = calculator->zif_llm_tool~execute( data         = data
                                                      tool_call_id = 'test_id' ).
 
-    DATA output TYPE zcl_llm_tool_calculator=>calculation_output.
-    ASSIGN result-data->* TO FIELD-SYMBOL(<output>).
+    
+    
+    ASSIGN result-data->* TO <output>.
     output = <output>.
 
     cl_abap_unit_assert=>assert_equals( exp = '12'
@@ -133,14 +217,26 @@ CLASS ltcl_calculator_tool IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD spaces_in_expression.
-    DATA(input) = VALUE zcl_llm_tool_calculator=>calculation_input( expression = '  2   +    2  ' ).
+    DATA temp43 TYPE zcl_llm_tool_calculator=>calculation_input.
+    DATA input LIKE temp43.
+    DATA data LIKE REF TO input.
+    DATA result TYPE zif_llm_tool=>tool_result.
+    DATA output TYPE zcl_llm_tool_calculator=>calculation_output.
+    FIELD-SYMBOLS <output> TYPE data.
+    CLEAR temp43.
+    temp43-expression = '  2   +    2  '.
+    
+    input = temp43.
 
-    DATA(data) = REF #( input ).
-    DATA(result) = calculator->zif_llm_tool~execute( data         = data
+    
+    GET REFERENCE OF input INTO data.
+    
+    result = calculator->zif_llm_tool~execute( data         = data
                                                      tool_call_id = 'test_id' ).
 
-    DATA output TYPE zcl_llm_tool_calculator=>calculation_output.
-    ASSIGN result-data->* TO FIELD-SYMBOL(<output>).
+    
+    
+    ASSIGN result-data->* TO <output>.
     output = <output>.
 
     cl_abap_unit_assert=>assert_equals( exp = '4'
@@ -148,14 +244,26 @@ CLASS ltcl_calculator_tool IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD division_by_zero.
-    DATA(input) = VALUE zcl_llm_tool_calculator=>calculation_input( expression = '1 / 0' ).
+    DATA temp44 TYPE zcl_llm_tool_calculator=>calculation_input.
+    DATA input LIKE temp44.
+    DATA data LIKE REF TO input.
+    DATA result TYPE zif_llm_tool=>tool_result.
+    DATA output TYPE zcl_llm_tool_calculator=>calculation_output.
+    FIELD-SYMBOLS <output> TYPE data.
+    CLEAR temp44.
+    temp44-expression = '1 / 0'.
+    
+    input = temp44.
 
-    DATA(data) = REF #( input ).
-    DATA(result) = calculator->zif_llm_tool~execute( data         = data
+    
+    GET REFERENCE OF input INTO data.
+    
+    result = calculator->zif_llm_tool~execute( data         = data
                                                      tool_call_id = 'test_id' ).
 
-    DATA output TYPE zcl_llm_tool_calculator=>calculation_output.
-    ASSIGN result-data->* TO FIELD-SYMBOL(<output>).
+    
+    
+    ASSIGN result-data->* TO <output>.
     output = <output>.
 
     cl_abap_unit_assert=>assert_char_cp( exp = 'Error:*'
@@ -163,14 +271,26 @@ CLASS ltcl_calculator_tool IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD invalid_expression.
-    DATA(input) = VALUE zcl_llm_tool_calculator=>calculation_input( expression = 'abc + 2' ).
+    DATA temp45 TYPE zcl_llm_tool_calculator=>calculation_input.
+    DATA input LIKE temp45.
+    DATA data LIKE REF TO input.
+    DATA result TYPE zif_llm_tool=>tool_result.
+    DATA output TYPE zcl_llm_tool_calculator=>calculation_output.
+    FIELD-SYMBOLS <output> TYPE data.
+    CLEAR temp45.
+    temp45-expression = 'abc + 2'.
+    
+    input = temp45.
 
-    DATA(data) = REF #( input ).
-    DATA(result) = calculator->zif_llm_tool~execute( data         = data
+    
+    GET REFERENCE OF input INTO data.
+    
+    result = calculator->zif_llm_tool~execute( data         = data
                                                     tool_call_id = 'test_id' ).
 
-    DATA output TYPE zcl_llm_tool_calculator=>calculation_output.
-    ASSIGN result-data->* TO FIELD-SYMBOL(<output>).
+    
+    
+    ASSIGN result-data->* TO <output>.
     output = <output>.
 
     " The error message from cx_sy_conversion_no_number
@@ -180,7 +300,8 @@ CLASS ltcl_calculator_tool IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD check_tool_details.
-    DATA(tool_details) = calculator->zif_llm_tool~get_tool_details( ).
+    DATA tool_details TYPE zif_llm_tool=>tool_details.
+    tool_details = calculator->zif_llm_tool~get_tool_details( ).
 
     cl_abap_unit_assert=>assert_equals( exp = 'calculator'
                                         act = tool_details-name ).
@@ -200,22 +321,56 @@ CLASS ltcl_calculator_tool IMPLEMENTATION.
              expression TYPE string,
              expected   TYPE string,
            END OF test_case,
-           test_cases TYPE STANDARD TABLE OF test_case WITH EMPTY KEY.
+           test_cases TYPE STANDARD TABLE OF test_case WITH DEFAULT KEY.
 
-    DATA(test_cases) = VALUE test_cases( ( expression = '(5 + 3) * 2'     expected = '16' )
-                                         ( expression = '2 + 3 * 4'       expected = '14' )
-                                         ( expression = '(2 + 3) * 4'     expected = '20' )
-                                         ( expression = '2 ** (2 + 1)'    expected = '8' )
-                                         ( expression = '((4 + 2) * 3)'   expected = '18' )
-                                         ( expression = '10 - (2 + 3)'    expected = '5' ) ).
-
-    LOOP AT test_cases INTO DATA(test_case).
-      DATA(input) = VALUE zcl_llm_tool_calculator=>calculation_input( expression = test_case-expression ).
-      DATA(data) = REF #( input ).
-      DATA(result) = calculator->zif_llm_tool~execute( data         = data
-                                                       tool_call_id = 'test_id' ).
+    DATA temp46 TYPE test_cases.
+    DATA temp47 LIKE LINE OF temp46.
+    DATA test_cases LIKE temp46.
+    DATA test_case LIKE LINE OF test_cases.
+      DATA temp48 TYPE zcl_llm_tool_calculator=>calculation_input.
+      DATA input LIKE temp48.
+      DATA data LIKE REF TO input.
+      DATA result TYPE zif_llm_tool=>tool_result.
       DATA output TYPE zcl_llm_tool_calculator=>calculation_output.
-      ASSIGN result-data->* TO FIELD-SYMBOL(<output>).
+      FIELD-SYMBOLS <output> TYPE data.
+    CLEAR temp46.
+    
+    temp47-expression = '(5 + 3) * 2'.
+    temp47-expected = '16'.
+    INSERT temp47 INTO TABLE temp46.
+    temp47-expression = '2 + 3 * 4'.
+    temp47-expected = '14'.
+    INSERT temp47 INTO TABLE temp46.
+    temp47-expression = '(2 + 3) * 4'.
+    temp47-expected = '20'.
+    INSERT temp47 INTO TABLE temp46.
+    temp47-expression = '2 ** (2 + 1)'.
+    temp47-expected = '8'.
+    INSERT temp47 INTO TABLE temp46.
+    temp47-expression = '((4 + 2) * 3)'.
+    temp47-expected = '18'.
+    INSERT temp47 INTO TABLE temp46.
+    temp47-expression = '10 - (2 + 3)'.
+    temp47-expected = '5'.
+    INSERT temp47 INTO TABLE temp46.
+    
+    test_cases = temp46.
+
+    
+    LOOP AT test_cases INTO test_case.
+      
+      CLEAR temp48.
+      temp48-expression = test_case-expression.
+      
+      input = temp48.
+      
+      GET REFERENCE OF input INTO data.
+      
+      result = calculator->zif_llm_tool~execute( data         = data
+                                                       tool_call_id = 'test_id' ).
+      
+      
+      ASSIGN result-data->* TO <output>.
       output = <output>.
       cl_abap_unit_assert=>assert_equals( exp = test_case-expected
                                           act = output-result
@@ -228,27 +383,67 @@ CLASS ltcl_calculator_tool IMPLEMENTATION.
              expression TYPE string,
              expected   TYPE string,
            END OF test_case,
-           test_cases TYPE STANDARD TABLE OF test_case WITH EMPTY KEY.
+           test_cases TYPE STANDARD TABLE OF test_case WITH DEFAULT KEY.
 
-    DATA(test_cases) = VALUE test_cases( ( expression = '4 ** 0.5'        expected = '2' )         " Square root
-                                         ( expression = '2 ** 0'          expected = '1' )         " Zero power
-                                         ( expression = '2.5 ** 2'        expected = '6,25' )      " Decimal base
-                                         ( expression = '3 ** 2 + 4'      expected = '13' )        " Combined with addition
-                                         ( expression = '2 ** (3 ** 2)'   expected = '512' )       " Nested power
-                                         ( expression = '(2 ** 3) ** 2'   expected = '64' )        " Parentheses
-                                         ( expression = '2 ** -2'         expected = '0,25' )      " Negative exponent
-                                         ( expression = '2 ** -3'         expected = '0,125' )     " Another negative exponent
-                                         ( expression = '4 ** -0.5'       expected = '0,5' ) ).    " Negative fractional exponent
+    DATA temp49 TYPE test_cases.
+    DATA temp50 LIKE LINE OF temp49.
+    DATA test_cases LIKE temp49.
+    DATA test_case LIKE LINE OF test_cases.
+      DATA temp51 TYPE zcl_llm_tool_calculator=>calculation_input.
+      DATA input LIKE temp51.
+      DATA data LIKE REF TO input.
+      DATA result TYPE zif_llm_tool=>tool_result.
+      DATA output TYPE zcl_llm_tool_calculator=>calculation_output.
+      FIELD-SYMBOLS <output> TYPE data.
+    CLEAR temp49.
+    
+    temp50-expression = '4 ** 0.5'.
+    temp50-expected = '2'.
+    INSERT temp50 INTO TABLE temp49.
+    temp50-expression = '2 ** 0'.
+    temp50-expected = '1'.
+    INSERT temp50 INTO TABLE temp49.
+    temp50-expression = '2.5 ** 2'.
+    temp50-expected = '6,25'.
+    INSERT temp50 INTO TABLE temp49.
+    temp50-expression = '3 ** 2 + 4'.
+    temp50-expected = '13'.
+    INSERT temp50 INTO TABLE temp49.
+    temp50-expression = '2 ** (3 ** 2)'.
+    temp50-expected = '512'.
+    INSERT temp50 INTO TABLE temp49.
+    temp50-expression = '(2 ** 3) ** 2'.
+    temp50-expected = '64'.
+    INSERT temp50 INTO TABLE temp49.
+    temp50-expression = '2 ** -2'.
+    temp50-expected = '0,25'.
+    INSERT temp50 INTO TABLE temp49.
+    temp50-expression = '2 ** -3'.
+    temp50-expected = '0,125'.
+    INSERT temp50 INTO TABLE temp49.
+    temp50-expression = '4 ** -0.5'.
+    temp50-expected = '0,5'.
+    INSERT temp50 INTO TABLE temp49.
+    
+    test_cases = temp49.    " Negative fractional exponent
 
-    LOOP AT test_cases INTO DATA(test_case).
-      DATA(input) = VALUE zcl_llm_tool_calculator=>calculation_input( expression = test_case-expression ).
+    
+    LOOP AT test_cases INTO test_case.
+      
+      CLEAR temp51.
+      temp51-expression = test_case-expression.
+      
+      input = temp51.
 
-      DATA(data) = REF #( input ).
-      DATA(result) = calculator->zif_llm_tool~execute( data         = data
+      
+      GET REFERENCE OF input INTO data.
+      
+      result = calculator->zif_llm_tool~execute( data         = data
                                                        tool_call_id = 'test_id' ).
 
-      DATA output TYPE zcl_llm_tool_calculator=>calculation_output.
-      ASSIGN result-data->* TO FIELD-SYMBOL(<output>).
+      
+      
+      ASSIGN result-data->* TO <output>.
       output = <output>.
 
       cl_abap_unit_assert=>assert_equals( exp = test_case-expected
@@ -262,28 +457,54 @@ CLASS ltcl_calculator_tool IMPLEMENTATION.
              expression TYPE string,
              exp_error  TYPE abap_bool,
            END OF test_case,
-           test_cases TYPE STANDARD TABLE OF test_case WITH EMPTY KEY.
+           test_cases TYPE STANDARD TABLE OF test_case WITH DEFAULT KEY.
 
-    DATA(test_cases) = VALUE test_cases(
-      ( expression = '2 ** a'        exp_error = abap_true )  " Invalid operand
-      ( expression = '2 ** '         exp_error = abap_true )  " Missing operand
-      ( expression = '** 2'          exp_error = abap_true )  " Missing operand
-      ( expression = '0 ** -1'       exp_error = abap_true )  " Division by zero
-    ).
+    DATA temp52 TYPE test_cases.
+    DATA temp53 LIKE LINE OF temp52.
+    DATA test_cases LIKE temp52.
+    DATA test_case LIKE LINE OF test_cases.
+      DATA temp54 TYPE zcl_llm_tool_calculator=>calculation_input.
+      DATA input LIKE temp54.
+      DATA data LIKE REF TO input.
+      DATA result TYPE zif_llm_tool=>tool_result.
+      DATA output TYPE zcl_llm_tool_calculator=>calculation_output.
+      FIELD-SYMBOLS <output> TYPE data.
+    CLEAR temp52.
+    
+    temp53-expression = '2 ** a'.
+    temp53-exp_error = abap_true.
+    INSERT temp53 INTO TABLE temp52.
+    temp53-expression = '2 ** '.
+    temp53-exp_error = abap_true.
+    INSERT temp53 INTO TABLE temp52.
+    temp53-expression = '** 2'.
+    temp53-exp_error = abap_true.
+    INSERT temp53 INTO TABLE temp52.
+    temp53-expression = '0 ** -1'.
+    temp53-exp_error = abap_true.
+    INSERT temp53 INTO TABLE temp52.
+    
+    test_cases = temp52.
 
-    LOOP AT test_cases INTO DATA(test_case).
-      DATA(input) = VALUE zcl_llm_tool_calculator=>calculation_input(
-        expression = test_case-expression
-      ).
+    
+    LOOP AT test_cases INTO test_case.
+      
+      CLEAR temp54.
+      temp54-expression = test_case-expression.
+      
+      input = temp54.
 
-      DATA(data) = REF #( input ).
-      DATA(result) = calculator->zif_llm_tool~execute(
+      
+      GET REFERENCE OF input INTO data.
+      
+      result = calculator->zif_llm_tool~execute(
         data         = data
         tool_call_id = 'test_id'
       ).
 
-      DATA output TYPE zcl_llm_tool_calculator=>calculation_output.
-      ASSIGN result-data->* TO FIELD-SYMBOL(<output>).
+      
+      
+      ASSIGN result-data->* TO <output>.
       output = <output>.
 
       IF test_case-exp_error = abap_true.

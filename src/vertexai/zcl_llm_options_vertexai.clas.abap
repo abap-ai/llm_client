@@ -59,35 +59,40 @@ ENDCLASS.
 CLASS zcl_llm_options_vertexai IMPLEMENTATION.
 
   METHOD set_parameter.
+    DATA temp1 TYPE zllm_keyvalue.
     " If parameter already exists, replace it
     DELETE int_parameters WHERE key = key.
 
     " Add new parameter
-    INSERT VALUE #(
-      key   = key
-      value = value
-    ) INTO TABLE int_parameters.
+    
+    CLEAR temp1.
+    temp1-key = key.
+    temp1-value = value.
+    INSERT temp1 INTO TABLE int_parameters.
   ENDMETHOD.
 
   METHOD validate_range_float.
+      DATA temp2 TYPE REF TO zcx_llm_validation.
     IF value < min OR value > max.
-      RAISE EXCEPTION NEW zcx_llm_validation(
-          textid = zcx_llm_validation=>value_out_of_range
-          attr1  = |Value { value } is out of range [{ min }, { max }]| ) ##NO_TEXT.
+      
+      CREATE OBJECT temp2 TYPE zcx_llm_validation EXPORTING textid = zcx_llm_validation=>value_out_of_range attr1 = |Value { value } is out of range [{ min }, { max }]|.
+      RAISE EXCEPTION temp2 ##NO_TEXT.
     ENDIF.
   ENDMETHOD.
 
   METHOD validate_range_int.
+      DATA temp3 TYPE REF TO zcx_llm_validation.
+      DATA temp4 TYPE REF TO zcx_llm_validation.
     IF value < min.
-      RAISE EXCEPTION NEW zcx_llm_validation(
-          textid = zcx_llm_validation=>value_out_of_range
-          attr1  = |Value { value } is below minimum { min }| ) ##NO_TEXT.
+      
+      CREATE OBJECT temp3 TYPE zcx_llm_validation EXPORTING textid = zcx_llm_validation=>value_out_of_range attr1 = |Value { value } is below minimum { min }|.
+      RAISE EXCEPTION temp3 ##NO_TEXT.
     ENDIF.
 
     IF max IS NOT INITIAL AND value > max.
-      RAISE EXCEPTION NEW zcx_llm_validation(
-          textid = zcx_llm_validation=>value_out_of_range
-          attr1  = |Value { value } is above maximum { max }| ) ##NO_TEXT.
+      
+      CREATE OBJECT temp4 TYPE zcx_llm_validation EXPORTING textid = zcx_llm_validation=>value_out_of_range attr1 = |Value { value } is above maximum { max }|.
+      RAISE EXCEPTION temp4 ##NO_TEXT.
     ENDIF.
   ENDMETHOD.
 
@@ -96,8 +101,11 @@ CLASS zcl_llm_options_vertexai IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD zif_llm_options~set_custom_parameters.
-    LOOP AT parameters INTO DATA(par).
-      READ TABLE int_parameters ASSIGNING FIELD-SYMBOL(<par>) WITH KEY key = par-key.
+    DATA par LIKE LINE OF parameters.
+      FIELD-SYMBOLS <par> TYPE zllm_keyvalue.
+    LOOP AT parameters INTO par.
+      
+      READ TABLE int_parameters ASSIGNING <par> WITH KEY key = par-key.
       IF sy-subrc = 0.
         <par>-value = par-value.
       ELSE.

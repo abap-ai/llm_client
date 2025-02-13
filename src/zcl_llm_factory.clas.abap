@@ -18,19 +18,33 @@ ENDCLASS.
 
 CLASS zcl_llm_factory IMPLEMENTATION.
   METHOD zif_llm_factory~get_client.
+    DATA client_configuration TYPE zllm_clnt_config.
+      DATA temp1 TYPE string.
+      DATA temp3 TYPE REF TO zcx_llm_validation.
+    DATA provider_configuration TYPE zllm_providers.
+      DATA temp2 TYPE string.
+      DATA temp4 TYPE REF TO zcx_llm_validation.
     auth_class->check_get_client( model ).
-    SELECT SINGLE * FROM zllm_clnt_config WHERE model = @model INTO @DATA(client_configuration).
+    
+    SELECT SINGLE * FROM zllm_clnt_config INTO client_configuration WHERE model = model .
     IF sy-subrc <> 0.
-      RAISE EXCEPTION NEW zcx_llm_validation( textid = zcx_llm_validation=>model_does_not_exist
-                                              attr1  = CONV string( model ) ).
+      
+      temp1 = model.
+      
+      CREATE OBJECT temp3 TYPE zcx_llm_validation EXPORTING textid = zcx_llm_validation=>model_does_not_exist attr1 = temp1.
+      RAISE EXCEPTION temp3.
     ENDIF.
 
-    SELECT SINGLE * FROM zllm_providers
-      WHERE provider_name = @client_configuration-provider_name
-      INTO @DATA(provider_configuration).
+    
+    SELECT SINGLE * FROM zllm_providers INTO provider_configuration
+      WHERE provider_name = client_configuration-provider_name
+      .
     IF sy-subrc <> 0.
-      RAISE EXCEPTION NEW zcx_llm_validation( textid = zcx_llm_validation=>provider_does_not_exist
-                                              attr1  = CONV string( client_configuration-provider_name ) ).
+      
+      temp2 = client_configuration-provider_name.
+      
+      CREATE OBJECT temp4 TYPE zcx_llm_validation EXPORTING textid = zcx_llm_validation=>provider_does_not_exist attr1 = temp2.
+      RAISE EXCEPTION temp4.
     ENDIF.
 
     CALL METHOD (provider_configuration-provider_class)=>('ZIF_LLM_CLIENT~GET_CLIENT')

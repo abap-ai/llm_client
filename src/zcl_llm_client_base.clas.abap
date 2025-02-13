@@ -32,7 +32,7 @@ CLASS zcl_llm_client_base DEFINITION
     TYPES: BEGIN OF base_message,
              role       TYPE string,
              content    TYPE string,
-             tool_calls TYPE STANDARD TABLE OF tool_call WITH EMPTY KEY,
+             tool_calls TYPE STANDARD TABLE OF tool_call WITH DEFAULT KEY,
            END OF base_message.
 
     TYPES: BEGIN OF base_choice,
@@ -48,7 +48,7 @@ CLASS zcl_llm_client_base DEFINITION
 
     TYPES: BEGIN OF base_response,
              id      TYPE string,
-             choices TYPE STANDARD TABLE OF base_choice WITH EMPTY KEY,
+             choices TYPE STANDARD TABLE OF base_choice WITH DEFAULT KEY,
              usage   TYPE base_usage,
              model   TYPE string,
            END OF base_response.
@@ -114,16 +114,18 @@ ENDCLASS.
 
 CLASS zcl_llm_client_base IMPLEMENTATION.
   METHOD constructor.
+        DATA help_timestamp TYPE timestampl.
+    DATA stat_handler TYPE REF TO zllm_implementation.
     me->client_config   = client_config.
     me->provider_config = provider_config.
     TRY.
         id = cl_system_uuid=>create_uuid_x16_static( ).
       CATCH cx_uuid_error.
-        DATA help_timestamp TYPE timestampl.
+        
         GET TIME STAMP FIELD help_timestamp.
         id = help_timestamp.
     ENDTRY.
-    DATA stat_handler TYPE REF TO zllm_implementation.
+    
     GET BADI stat_handler.
     CALL BADI stat_handler->get_statistics_impl
       RECEIVING
@@ -131,14 +133,23 @@ CLASS zcl_llm_client_base IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD build_request_json.
+    DATA first_line TYPE abap_bool VALUE abap_true.
+    DATA messages LIKE request-messages.
+    DATA message LIKE LINE OF messages.
+      FIELD-SYMBOLS <tool> LIKE LINE OF request-tools.
+        DATA details TYPE zif_llm_tool=>tool_details.
+    DATA option_parameters TYPE zllm_keyvalues.
+    DATA parameter LIKE LINE OF option_parameters.
     " Open content
     result = |\{"model":"{ client_config-provider_model }","messages":[|.
-    DATA first_line TYPE abap_bool VALUE abap_true.
+    
 
-    DATA(messages) = request-messages.
+    
+    messages = request-messages.
 
     " Add messages
-    LOOP AT messages INTO DATA(message).
+    
+    LOOP AT messages INTO message.
       IF first_line = abap_true.
         result = |{ result }{ parse_message( message ) }|.
         first_line = abap_false.
@@ -157,8 +168,10 @@ CLASS zcl_llm_client_base IMPLEMENTATION.
     IF lines( request-tools ) > 0 AND request-tool_choice <> zif_llm_chat_request=>tool_choice_none.
       result = |{ result },"tools":[|.
       first_line = abap_true.
-      LOOP AT request-tools ASSIGNING FIELD-SYMBOL(<tool>).
-        DATA(details) = <tool>->get_tool_details( ).
+      
+      LOOP AT request-tools ASSIGNING <tool>.
+        
+        details = <tool>->get_tool_details( ).
         IF first_line = abap_true.
           result = |{ result }\{"type":"{ details-type }","{ details-type }":\{"name":"{ details-name }"|
                 && |,"description":"{ details-description }","parameters":|
@@ -187,8 +200,10 @@ CLASS zcl_llm_client_base IMPLEMENTATION.
     ENDIF.
 
     " Add options if available
-    DATA(option_parameters) = request-options->get_paramters( ).
-    LOOP AT option_parameters INTO DATA(parameter).
+    
+    option_parameters = request-options->get_paramters( ).
+    
+    LOOP AT option_parameters INTO parameter.
       result = |{ result },"{ parameter-key }":{ parameter-value }|.
     ENDLOOP.
 
@@ -196,6 +211,11 @@ CLASS zcl_llm_client_base IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD handle_http_response.
+    DATA response TYPE base_response.
+    DATA response_choice TYPE zcl_llm_client_base=>base_choice.
+    DATA temp1 LIKE LINE OF response-choices.
+    DATA temp2 LIKE sy-tabix.
+          DATA error TYPE REF TO cx_root.
     IF http_response-code >= 400.
       result-error-http_code  = http_response-code.
       result-error-error_text = http_response-message.
@@ -206,7 +226,7 @@ CLASS zcl_llm_client_base IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    DATA response TYPE base_response.
+    
 
     zcl_llm_common=>from_json( EXPORTING json = http_response-response
                                CHANGING  data = response ).
@@ -218,14 +238,26 @@ CLASS zcl_llm_client_base IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    DATA(response_choice) = response-choices[ 1 ].
-    result-choice = VALUE #( finish_reason = response_choice-finish_reason
-                             message       = VALUE #( role    = response_choice-message-role
-                                                      content = response_choice-message-content ) ).
+    
+    
+    
+    temp2 = sy-tabix.
+    READ TABLE response-choices INDEX 1 INTO temp1.
+    sy-tabix = temp2.
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
+    ENDIF.
+    response_choice = temp1.
+    CLEAR result-choice.
+    result-choice-finish_reason = response_choice-finish_reason.
+    CLEAR result-choice-message.
+    result-choice-message-role = response_choice-message-role.
+    result-choice-message-content = response_choice-message-content.
 
-    result-usage  = VALUE #( completion_tokens = response-usage-completion_tokens
-                             prompt_tokens     = response-usage-prompt_tokens
-                             total_tokens      = response-usage-total_tokens ).
+    CLEAR result-usage.
+    result-usage-completion_tokens = response-usage-completion_tokens.
+    result-usage-prompt_tokens = response-usage-prompt_tokens.
+    result-usage-total_tokens = response-usage-total_tokens.
 
     IF request-use_structured_output = abap_true.
       parse_structured_output( EXPORTING content  = response_choice-message-content
@@ -239,10 +271,12 @@ CLASS zcl_llm_client_base IMPLEMENTATION.
           handle_tool_calls( EXPORTING response_choice = response_choice
                                        request         = request
                              CHANGING  result          = result ).
-        CATCH cx_root INTO DATA(error).
+          
+        CATCH cx_root INTO error.
           result-success = abap_false.
-          result-error   = VALUE #( tool_parse_error = abap_true
-                                    error_text       = error->get_text( ) ).
+          CLEAR result-error.
+          result-error-tool_parse_error = abap_true.
+          result-error-error_text = error->get_text( ).
           RETURN.
       ENDTRY.
     ENDIF.
@@ -251,27 +285,40 @@ CLASS zcl_llm_client_base IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD handle_tool_calls.
-    LOOP AT request-tools ASSIGNING FIELD-SYMBOL(<tool>).
-      DATA(details) = <tool>->get_tool_details( ).
+    FIELD-SYMBOLS <tool> LIKE LINE OF request-tools.
+      DATA details TYPE zif_llm_tool=>tool_details.
+      FIELD-SYMBOLS <tool_call> LIKE LINE OF response_choice-message-tool_calls.
+            DATA func_result TYPE REF TO data.
+            DATA temp1 TYPE zllm_tool_call.
+            DATA message_text TYPE string.
+    LOOP AT request-tools ASSIGNING <tool>.
+      
+      details = <tool>->get_tool_details( ).
 
-      LOOP AT response_choice-message-tool_calls ASSIGNING FIELD-SYMBOL(<tool_call>)
+      
+      LOOP AT response_choice-message-tool_calls ASSIGNING <tool_call>
            WHERE function-name = details-name.
         TRY.
-            DATA func_result TYPE REF TO data.
+            
             CREATE DATA func_result TYPE HANDLE details-parameters-data_desc.
 
             zcl_llm_common=>from_json( EXPORTING json = <tool_call>-function-arguments
                                        CHANGING  data = func_result ).
 
-            APPEND VALUE #( id       = <tool_call>-id
-                            type     = zif_llm_tool=>type_function
-                            function = VALUE #( name          = details-name
-                                                arguments     = func_result
-                                                json_response = <tool_call>-function-arguments ) )
+            
+            CLEAR temp1.
+            temp1-id = <tool_call>-id.
+            temp1-type = zif_llm_tool=>type_function.
+            CLEAR temp1-function.
+            temp1-function-name = details-name.
+            temp1-function-arguments = func_result.
+            temp1-function-json_response = <tool_call>-function-arguments.
+            APPEND temp1
                    TO result-choice-tool_calls.
           CATCH cx_root.
+            
             MESSAGE ID 'ZLLM_CLIENT' TYPE 'E' NUMBER 016
-                    WITH <tool_call>-function-name INTO DATA(message_text) ##NEEDED.
+                    WITH <tool_call>-function-name INTO message_text ##NEEDED.
         ENDTRY.
       ENDLOOP.
 
@@ -284,9 +331,11 @@ CLASS zcl_llm_client_base IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD parse_message.
+      FIELD-SYMBOLS <tool_call> LIKE LINE OF message-tool_calls.
     IF lines( message-tool_calls ) > 0.
       result = |\{"role":"{ message-role }","tool_calls":[|.
-      LOOP AT message-tool_calls ASSIGNING FIELD-SYMBOL(<tool_call>).
+      
+      LOOP AT message-tool_calls ASSIGNING <tool_call>.
         IF sy-tabix <> 1.
           result = |{ result },|.
         ENDIF.
@@ -312,7 +361,7 @@ CLASS zcl_llm_client_base IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD create_structured_output.
-    result = NEW zcl_llm_so_js( ).
+    CREATE OBJECT result TYPE zcl_llm_so_js.
   ENDMETHOD.
 
   METHOD initialize.
@@ -321,7 +370,8 @@ CLASS zcl_llm_client_base IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD parse_structured_output.
-    DATA(data_desc) = request-structured_output->get_datatype( ).
+    DATA data_desc TYPE REF TO cl_abap_datadescr.
+    data_desc = request-structured_output->get_datatype( ).
 
     CREATE DATA response-choice-structured_output TYPE HANDLE data_desc.
 
@@ -330,26 +380,34 @@ CLASS zcl_llm_client_base IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD zif_llm_client~chat.
+        DATA resp TYPE zif_llm_http_client_wrapper=>response.
+        DATA temp2 TYPE zllm_statistics.
+        DATA http_error TYPE REF TO zcx_llm_http_error.
     TRY.
         msg = msg + 1.
         client->set_url( get_chat_endpoint( ) ).
         GET TIME STAMP FIELD begin_request.
-        DATA(resp) = client->communicate( request    = build_request_json( request->get_internal_request( ) )
+        
+        resp = client->communicate( request    = build_request_json( request->get_internal_request( ) )
                                           session_id = id
                                           msg        = msg ).
         GET TIME STAMP FIELD end_request.
         response = handle_http_response( http_response = resp
                                          request       = request->get_internal_request( ) ).
-        statistics->add( VALUE #( call_date     = sy-datum
-                                  call_time     = sy-uzeit
-                                  duration      = end_request - begin_request
-                                  model         = client_config-model
-                                  tokens_prompt = response-usage-prompt_tokens
-                                  tokens_resp   = response-usage-completion_tokens
-                                  tokens_total  = response-usage-total_tokens
-                                  id            = id
-                                  msg           = msg ) ).
-      CATCH zcx_llm_http_error INTO DATA(http_error).
+        
+        CLEAR temp2.
+        temp2-call_date = sy-datum.
+        temp2-call_time = sy-uzeit.
+        temp2-duration = end_request - begin_request.
+        temp2-model = client_config-model.
+        temp2-tokens_prompt = response-usage-prompt_tokens.
+        temp2-tokens_resp = response-usage-completion_tokens.
+        temp2-tokens_total = response-usage-total_tokens.
+        temp2-id = id.
+        temp2-msg = msg.
+        statistics->add( temp2 ).
+        
+      CATCH zcx_llm_http_error INTO http_error.
         response-error-error_text = http_error->if_message~get_text( ).
         response-error-retrieable = abap_false.
       CLEANUP.
@@ -361,9 +419,15 @@ CLASS zcl_llm_client_base IMPLEMENTATION.
 
   METHOD zif_llm_client~new_request.
     DATA request TYPE zllm_request.
+      DATA options TYPE STANDARD TABLE OF string WITH DEFAULT KEY.
+      DATA parameters TYPE zllm_keyvalues.
+      DATA option LIKE LINE OF options.
+        DATA key TYPE string.
+        DATA value TYPE string.
+        DATA temp3 TYPE zllm_keyvalue.
 
     " Initialize options
-    request-options           = NEW zcl_llm_options( ).
+    CREATE OBJECT request-options TYPE zcl_llm_options.
 
     " Initialize structured output using provider-specific implementation
     request-structured_output = create_structured_output( ).
@@ -372,13 +436,20 @@ CLASS zcl_llm_client_base IMPLEMENTATION.
 
     " Get configured default parameters and set them
     IF client_config-default_op IS NOT INITIAL.
-      SPLIT client_config-default_op AT ';' INTO TABLE DATA(options).
-      DATA parameters TYPE zllm_keyvalues.
+      
+      SPLIT client_config-default_op AT ';' INTO TABLE options.
+      
 
-      LOOP AT options INTO DATA(option).
-        SPLIT option AT ':' INTO DATA(key) DATA(value).
-        INSERT VALUE #( key   = key
-                        value = value )
+      
+      LOOP AT options INTO option.
+        
+        
+        SPLIT option AT ':' INTO key value.
+        
+        CLEAR temp3.
+        temp3-key = key.
+        temp3-value = value.
+        INSERT temp3
                INTO TABLE parameters.
       ENDLOOP.
 
@@ -386,7 +457,7 @@ CLASS zcl_llm_client_base IMPLEMENTATION.
     ENDIF.
 
     " Create and return chat request object
-    response = NEW zcl_llm_chat_request( request ).
+    CREATE OBJECT response TYPE zcl_llm_chat_request EXPORTING REQUEST = request.
   ENDMETHOD.
 
   METHOD zif_llm_client~get_client.
@@ -399,7 +470,7 @@ CLASS zcl_llm_client_base IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD create_tool_parser.
-    result = NEW zcl_llm_tool_parser(  ).
+    CREATE OBJECT result TYPE zcl_llm_tool_parser.
   ENDMETHOD.
 
 ENDCLASS.

@@ -35,8 +35,7 @@ CLASS zcl_llm_client_openrouter IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD get_client.
-    result = NEW zcl_llm_client_openrouter( client_config   = client_config
-                                            provider_config = provider_config ).
+    CREATE OBJECT result TYPE zcl_llm_client_openrouter EXPORTING client_config = client_config provider_config = provider_config.
   ENDMETHOD.
 
   METHOD get_chat_endpoint.
@@ -70,7 +69,7 @@ CLASS zcl_llm_client_openrouter IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD create_structured_output.
-    result = NEW zcl_llm_so_js_or( ).
+    CREATE OBJECT result TYPE zcl_llm_so_js_or.
   ENDMETHOD.
 
 ENDCLASS.

@@ -38,7 +38,7 @@ CLASS zcl_llm_client_anthropic DEFINITION
              " We need this as pure json content in order to parse it later
              input TYPE /ui2/cl_json=>json,
            END OF anthropic_message,
-           anthropic_messages TYPE STANDARD TABLE OF anthropic_message WITH EMPTY KEY.
+           anthropic_messages TYPE STANDARD TABLE OF anthropic_message WITH DEFAULT KEY.
 
     TYPES: BEGIN OF anthropic_usage,
              input_tokens  TYPE i,
@@ -62,8 +62,7 @@ CLASS zcl_llm_client_anthropic IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD get_client.
-    result = NEW zcl_llm_client_anthropic( client_config   = client_config
-                                           provider_config = provider_config ).
+    CREATE OBJECT result TYPE zcl_llm_client_anthropic EXPORTING client_config = client_config provider_config = provider_config.
   ENDMETHOD.
 
   METHOD get_chat_endpoint.
@@ -106,15 +105,27 @@ CLASS zcl_llm_client_anthropic IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD build_request_json.
+    DATA first_line TYPE abap_bool VALUE abap_true.
+    DATA non_system_messages TYPE zllm_msgs.
+    DATA system_messages TYPE zllm_msgs.
+    FIELD-SYMBOLS <message> LIKE LINE OF request-messages.
+    DATA message LIKE LINE OF non_system_messages.
+      DATA system_message LIKE LINE OF system_messages.
+    DATA tool_definition_required LIKE abap_false.
+      FIELD-SYMBOLS <tool> LIKE LINE OF request-tools.
+        DATA details TYPE zif_llm_tool=>tool_details.
+    DATA option_parameters TYPE zllm_keyvalues.
+    DATA parameter LIKE LINE OF option_parameters.
     " Open content
     result = |\{"model":"{ client_config-provider_model }","messages":[|.
-    DATA first_line          TYPE abap_bool VALUE abap_true.
+    
 
     " Anthropic handles system messages differently
-    DATA non_system_messages TYPE zllm_msgs.
-    DATA system_messages     TYPE zllm_msgs.
+    
+    
 
-    LOOP AT request-messages ASSIGNING FIELD-SYMBOL(<message>).
+    
+    LOOP AT request-messages ASSIGNING <message>.
       IF <message>-role = 'system'.
         APPEND <message> TO system_messages.
       ELSE.
@@ -123,7 +134,8 @@ CLASS zcl_llm_client_anthropic IMPLEMENTATION.
     ENDLOOP.
 
     " Add messages
-    LOOP AT non_system_messages INTO DATA(message).
+    
+    LOOP AT non_system_messages INTO message.
       IF first_line = abap_true.
         result = |{ result }{ parse_message( message ) }|.
         first_line = abap_false.
@@ -137,7 +149,8 @@ CLASS zcl_llm_client_anthropic IMPLEMENTATION.
     IF lines( system_messages ) > 0.
       first_line = abap_true.
       result = |{ result },"system":[|.
-      LOOP AT system_messages INTO DATA(system_message).
+      
+      LOOP AT system_messages INTO system_message.
         IF first_line = abap_true.
           result = |{ result }\{"text":"{ system_message-content }","type":"text"\}|.
           first_line = abap_false.
@@ -149,7 +162,8 @@ CLASS zcl_llm_client_anthropic IMPLEMENTATION.
     ENDIF.
 
     " Anthropic requires tool definitions of tools used before.
-    DATA(tool_definition_required) = abap_false.
+    
+    tool_definition_required = abap_false.
     IF lines( request-tools ) > 0 AND request-tool_choice = zif_llm_chat_request=>tool_choice_none.
       LOOP AT request-messages ASSIGNING <message>.
         IF lines( <message>-tool_calls ) > 0.
@@ -162,8 +176,10 @@ CLASS zcl_llm_client_anthropic IMPLEMENTATION.
     IF lines( request-tools ) > 0 AND ( tool_definition_required = abap_true OR request-tool_choice <> zif_llm_chat_request=>tool_choice_none ).
       result = |{ result },"tools":[|.
       first_line = abap_true.
-      LOOP AT request-tools ASSIGNING FIELD-SYMBOL(<tool>).
-        DATA(details) = <tool>->get_tool_details( ).
+      
+      LOOP AT request-tools ASSIGNING <tool>.
+        
+        details = <tool>->get_tool_details( ).
         IF first_line = abap_true.
           result = |{ result }\{"name":"{ details-name }"|
                 && |,"description":"{ details-description }","input_schema":|
@@ -196,8 +212,10 @@ CLASS zcl_llm_client_anthropic IMPLEMENTATION.
     ENDIF.
 
     " Add options if available
-    DATA(option_parameters) = request-options->get_paramters( ).
-    LOOP AT option_parameters INTO DATA(parameter).
+    
+    option_parameters = request-options->get_paramters( ).
+    
+    LOOP AT option_parameters INTO parameter.
       result = |{ result },"{ parameter-key }":{ parameter-value }|.
     ENDLOOP.
 
@@ -205,16 +223,20 @@ CLASS zcl_llm_client_anthropic IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD parse_message.
+      DATA content LIKE message-content.
+      FIELD-SYMBOLS <tool_call> LIKE LINE OF message-tool_calls.
     IF lines( message-tool_calls ) > 0.
       " Add a dummy assistant message if the output from the last call in not available
-      DATA(content) = message-content.
+      
+      content = message-content.
       IF content IS INITIAL.
         content = `tool call.` ##NO_TEXT.
       ENDIF.
 
       result = |\{"role":"{ message-role }","content":[|
             && |\{"type":"text","text":"{ content }"\}|.
-      LOOP AT message-tool_calls ASSIGNING FIELD-SYMBOL(<tool_call>).
+      
+      LOOP AT message-tool_calls ASSIGNING <tool_call>.
 
         result = |{ result },\{"id":"{ <tool_call>-id }","type":"tool_use",|
               && |"name":"{ <tool_call>-function-name }",|
@@ -238,6 +260,15 @@ CLASS zcl_llm_client_anthropic IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD handle_http_response.
+    DATA response TYPE anthropic_response.
+    DATA tool_calls TYPE anthropic_messages.
+    DATA assistant_response TYPE string.
+    FIELD-SYMBOLS <content> LIKE LINE OF response-content.
+    DATA temp1 TYPE base_choice.
+    DATA response_choice LIKE temp1.
+    FIELD-SYMBOLS <tool_call> LIKE LINE OF tool_calls.
+      DATA temp2 TYPE zcl_llm_client_base=>tool_call.
+          DATA error TYPE REF TO cx_root.
     IF http_response-code >= 400.
       result-error-http_code  = http_response-code.
       result-error-error_text = http_response-message.
@@ -248,15 +279,16 @@ CLASS zcl_llm_client_anthropic IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    DATA response TYPE anthropic_response.
+    
 
     zcl_llm_common=>from_json( EXPORTING json = http_response-response
                                CHANGING  data = response ).
 
     " We should only have one text response but there might be multiple tool_use entries
-    DATA tool_calls         TYPE anthropic_messages.
-    DATA assistant_response TYPE string.
-    LOOP AT response-content ASSIGNING FIELD-SYMBOL(<content>).
+    
+    
+    
+    LOOP AT response-content ASSIGNING <content>.
       IF <content>-type = 'text'.
         IF assistant_response IS NOT INITIAL.
           result-success = abap_false.
@@ -269,24 +301,37 @@ CLASS zcl_llm_client_anthropic IMPLEMENTATION.
       ENDIF.
     ENDLOOP.
 
-    result-choice = VALUE #( finish_reason = response-stop_reason
-                             message       = VALUE #( role    = response-role
-                                                      content = assistant_response ) ).
+    CLEAR result-choice.
+    result-choice-finish_reason = response-stop_reason.
+    CLEAR result-choice-message.
+    result-choice-message-role = response-role.
+    result-choice-message-content = assistant_response.
 
-    result-usage  = VALUE #( completion_tokens = response-usage-output_tokens
-                             prompt_tokens     = response-usage-input_tokens
-                             total_tokens      = ( response-usage-input_tokens + response-usage-output_tokens ) ).
+    CLEAR result-usage.
+    result-usage-completion_tokens = response-usage-output_tokens.
+    result-usage-prompt_tokens = response-usage-input_tokens.
+    result-usage-total_tokens = ( response-usage-input_tokens + response-usage-output_tokens ).
 
     " Handle tool calls
     " To minimize effort we just transfer the anthropic response structure to our internal one
-    DATA(response_choice) = VALUE base_choice( finish_reason = response-stop_reason
-                                               message       = VALUE #( role    = zif_llm_client=>role_assistant
-                                                                        content = assistant_response ) ).
-    LOOP AT tool_calls ASSIGNING FIELD-SYMBOL(<tool_call>).
-      APPEND VALUE #( id       = <tool_call>-id
-                      type     = 'function'
-                      function = VALUE #( name      = <tool_call>-name
-                                          arguments = <tool_call>-input ) ) TO response_choice-message-tool_calls.
+    
+    CLEAR temp1.
+    temp1-finish_reason = response-stop_reason.
+    CLEAR temp1-message.
+    temp1-message-role = zif_llm_client=>role_assistant.
+    temp1-message-content = assistant_response.
+    
+    response_choice = temp1.
+    
+    LOOP AT tool_calls ASSIGNING <tool_call>.
+      
+      CLEAR temp2.
+      temp2-id = <tool_call>-id.
+      temp2-type = 'function'.
+      CLEAR temp2-function.
+      temp2-function-name = <tool_call>-name.
+      temp2-function-arguments = <tool_call>-input.
+      APPEND temp2 TO response_choice-message-tool_calls.
     ENDLOOP.
 
     IF request-tool_choice <> zif_llm_chat_request=>tool_choice_none.
@@ -294,10 +339,12 @@ CLASS zcl_llm_client_anthropic IMPLEMENTATION.
           handle_tool_calls( EXPORTING response_choice = response_choice
                                        request         = request
                              CHANGING  result          = result ).
-        CATCH cx_root INTO DATA(error).
+          
+        CATCH cx_root INTO error.
           result-success = abap_false.
-          result-error   = VALUE #( tool_parse_error = abap_true
-                                    error_text       = error->get_text( ) ).
+          CLEAR result-error.
+          result-error-tool_parse_error = abap_true.
+          result-error-error_text = error->get_text( ).
           RETURN.
       ENDTRY.
     ENDIF.

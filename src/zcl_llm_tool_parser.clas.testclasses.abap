@@ -29,7 +29,7 @@ ENDCLASS.
 CLASS ltcl_llm_so_default IMPLEMENTATION.
 
   METHOD setup.
-    cut = NEW #( ).
+    CREATE OBJECT cut.
   ENDMETHOD.
 
   METHOD test_single_element.
@@ -37,7 +37,11 @@ CLASS ltcl_llm_so_default IMPLEMENTATION.
              field TYPE string,
            END OF element_type.
 
-    DATA(schema) = cut->zif_llm_tool_parser~parse( CAST #( cl_abap_datadescr=>describe_by_name( 'ELEMENT_TYPE' ) ) ).
+    DATA temp13 TYPE REF TO cl_abap_datadescr.
+    DATA schema TYPE string.
+    temp13 ?= cl_abap_datadescr=>describe_by_name( 'ELEMENT_TYPE' ).
+    
+    schema = cut->zif_llm_tool_parser~parse( temp13 ).
 
     cl_abap_unit_assert=>assert_char_cp(
       act = schema
@@ -51,7 +55,11 @@ CLASS ltcl_llm_so_default IMPLEMENTATION.
              amount TYPE decfloat34,
            END OF simple_type.
 
-    DATA(schema) = cut->zif_llm_tool_parser~parse( CAST #( cl_abap_datadescr=>describe_by_name( 'SIMPLE_TYPE' ) ) ).
+    DATA temp14 TYPE REF TO cl_abap_datadescr.
+    DATA schema TYPE string.
+    temp14 ?= cl_abap_datadescr=>describe_by_name( 'SIMPLE_TYPE' ).
+    
+    schema = cut->zif_llm_tool_parser~parse( temp14 ).
 
     cl_abap_unit_assert=>assert_char_cp(
       act = schema
@@ -69,7 +77,11 @@ CLASS ltcl_llm_so_default IMPLEMENTATION.
              address TYPE address_type,
            END OF person_type.
 
-    DATA(schema) = cut->zif_llm_tool_parser~parse( CAST #( cl_abap_datadescr=>describe_by_name( 'PERSON_TYPE' ) ) ).
+    DATA temp15 TYPE REF TO cl_abap_datadescr.
+    DATA schema TYPE string.
+    temp15 ?= cl_abap_datadescr=>describe_by_name( 'PERSON_TYPE' ).
+    
+    schema = cut->zif_llm_tool_parser~parse( temp15 ).
 
     cl_abap_unit_assert=>assert_char_cp(
       act = schema
@@ -78,10 +90,14 @@ CLASS ltcl_llm_so_default IMPLEMENTATION.
 
   METHOD test_table.
     TYPES: BEGIN OF test_type,
-             items TYPE STANDARD TABLE OF string WITH EMPTY KEY,
+             items TYPE STANDARD TABLE OF string WITH DEFAULT KEY,
            END OF test_type.
 
-    DATA(schema) = cut->zif_llm_tool_parser~parse( CAST #( cl_abap_datadescr=>describe_by_name( 'TEST_TYPE' ) ) ).
+    DATA temp16 TYPE REF TO cl_abap_datadescr.
+    DATA schema TYPE string.
+    temp16 ?= cl_abap_datadescr=>describe_by_name( 'TEST_TYPE' ).
+    
+    schema = cut->zif_llm_tool_parser~parse( temp16 ).
 
     cl_abap_unit_assert=>assert_char_cp(
       act = schema
@@ -95,10 +111,14 @@ CLASS ltcl_llm_so_default IMPLEMENTATION.
            END OF line_type.
 
     TYPES: BEGIN OF test_type,
-             items TYPE STANDARD TABLE OF line_type WITH EMPTY KEY,
+             items TYPE STANDARD TABLE OF line_type WITH DEFAULT KEY,
            END OF test_type.
 
-    DATA(schema) = cut->zif_llm_tool_parser~parse( CAST #( cl_abap_datadescr=>describe_by_name( 'TEST_TYPE' ) ) ).
+    DATA temp17 TYPE REF TO cl_abap_datadescr.
+    DATA schema TYPE string.
+    temp17 ?= cl_abap_datadescr=>describe_by_name( 'TEST_TYPE' ).
+    
+    schema = cut->zif_llm_tool_parser~parse( temp17 ).
 
     cl_abap_unit_assert=>assert_char_cp(
       act = schema
@@ -107,9 +127,12 @@ CLASS ltcl_llm_so_default IMPLEMENTATION.
 
   METHOD test_invalid_type.
     DATA test TYPE REF TO data.
+        DATA temp18 TYPE REF TO cl_abap_datadescr.
 
     TRY.
-        cut->zif_llm_tool_parser~parse( CAST #( cl_abap_datadescr=>describe_by_data( test ) ) ).
+        
+        temp18 ?= cl_abap_datadescr=>describe_by_data( test ).
+        cut->zif_llm_tool_parser~parse( temp18 ).
         cl_abap_unit_assert=>fail( ).
       CATCH zcx_llm_validation.                        "#EC EMPTY_CATCH
         "Expected exception
@@ -121,7 +144,11 @@ CLASS ltcl_llm_so_default IMPLEMENTATION.
              flag TYPE abap_bool,
            END OF test_type.
 
-    DATA(schema) = cut->zif_llm_tool_parser~parse( CAST #( cl_abap_datadescr=>describe_by_name( 'TEST_TYPE' ) ) ).
+    DATA temp19 TYPE REF TO cl_abap_datadescr.
+    DATA schema TYPE string.
+    temp19 ?= cl_abap_datadescr=>describe_by_name( 'TEST_TYPE' ).
+    
+    schema = cut->zif_llm_tool_parser~parse( temp19 ).
 
     cl_abap_unit_assert=>assert_char_cp(
       act = schema
@@ -136,12 +163,25 @@ CLASS ltcl_llm_so_default IMPLEMENTATION.
 
     DATA descriptions TYPE zif_llm_so=>def_descriptions.
 
-    descriptions = VALUE #(
-      ( fieldname = 'id' description = 'Identifier' )
-      ( fieldname = 'name' description = 'Full Name' ) ).
+    DATA temp20 TYPE zif_llm_so=>def_descriptions.
+    DATA temp21 LIKE LINE OF temp20.
+    DATA temp22 TYPE REF TO cl_abap_datadescr.
+    DATA schema TYPE string.
+    CLEAR temp20.
+    
+    temp21-fieldname = 'id'.
+    temp21-description = 'Identifier'.
+    INSERT temp21 INTO TABLE temp20.
+    temp21-fieldname = 'name'.
+    temp21-description = 'Full Name'.
+    INSERT temp21 INTO TABLE temp20.
+    descriptions = temp20.
 
-    DATA(schema) = cut->zif_llm_tool_parser~parse(
-        data_desc = CAST #( cl_abap_datadescr=>describe_by_name( 'TEST_TYPE' ) )
+    
+    temp22 ?= cl_abap_datadescr=>describe_by_name( 'TEST_TYPE' ).
+    
+    schema = cut->zif_llm_tool_parser~parse(
+        data_desc = temp22
         descriptions = descriptions ).
 
     cl_abap_unit_assert=>assert_char_cp(
@@ -156,13 +196,29 @@ CLASS ltcl_llm_so_default IMPLEMENTATION.
 
     DATA descriptions TYPE zif_llm_so=>def_descriptions.
 
-    descriptions = VALUE #(
-      ( fieldname = 'status'
-        description = 'Current Status'
-        enum_values = VALUE #( ( `NEW` ) ( `IN_PROGRESS` ) ( `DONE` ) ) ) ).
+    DATA temp23 TYPE zif_llm_so=>def_descriptions.
+    DATA temp24 LIKE LINE OF temp23.
+    DATA temp8 TYPE string_table.
+    DATA temp25 TYPE REF TO cl_abap_datadescr.
+    DATA schema TYPE string.
+    CLEAR temp23.
+    
+    temp24-fieldname = 'status'.
+    temp24-description = 'Current Status'.
+    
+    CLEAR temp8.
+    INSERT `NEW` INTO TABLE temp8.
+    INSERT `IN_PROGRESS` INTO TABLE temp8.
+    INSERT `DONE` INTO TABLE temp8.
+    temp24-enum_values = temp8.
+    INSERT temp24 INTO TABLE temp23.
+    descriptions = temp23.
 
-    DATA(schema) = cut->zif_llm_tool_parser~parse(
-            data_desc = CAST #( cl_abap_datadescr=>describe_by_name( 'TEST_TYPE' ) )
+    
+    temp25 ?= cl_abap_datadescr=>describe_by_name( 'TEST_TYPE' ).
+    
+    schema = cut->zif_llm_tool_parser~parse(
+            data_desc = temp25
             descriptions = descriptions ).
 
     cl_abap_unit_assert=>assert_char_cp(
@@ -174,11 +230,16 @@ CLASS ltcl_llm_so_default IMPLEMENTATION.
     TYPES: BEGIN OF test_type,
              category TYPE c LENGTH 1,
            END OF test_type.
+        DATA temp26 TYPE REF TO cl_abap_datadescr.
+        DATA ex TYPE REF TO zcx_llm_validation.
 
     TRY.
-        cut->zif_llm_tool_parser~parse( CAST #( cl_abap_datadescr=>describe_by_name( 'TEST_TYPE' ) ) ).
+        
+        temp26 ?= cl_abap_datadescr=>describe_by_name( 'TEST_TYPE' ).
+        cut->zif_llm_tool_parser~parse( temp26 ).
         cl_abap_unit_assert=>fail( 'Should raise exception for non-boolean CHAR1' ).
-      CATCH zcx_llm_validation INTO DATA(ex).          "#EC EMPTY_CATCH
+        
+      CATCH zcx_llm_validation INTO ex.          "#EC EMPTY_CATCH
     ENDTRY.
   ENDMETHOD.
 
@@ -187,11 +248,16 @@ CLASS ltcl_llm_so_default IMPLEMENTATION.
              "Date type is not supported
              date TYPE d,
            END OF test_type.
+        DATA temp27 TYPE REF TO cl_abap_datadescr.
+        DATA ex TYPE REF TO zcx_llm_validation.
 
     TRY.
-        cut->zif_llm_tool_parser~parse( CAST #( cl_abap_datadescr=>describe_by_name( 'TEST_TYPE' ) ) ).
+        
+        temp27 ?= cl_abap_datadescr=>describe_by_name( 'TEST_TYPE' ).
+        cut->zif_llm_tool_parser~parse( temp27 ).
         cl_abap_unit_assert=>fail( 'Should raise exception for unsupported type' ).
-      CATCH zcx_llm_validation INTO DATA(ex).          "#EC EMPTY_CATCH
+        
+      CATCH zcx_llm_validation INTO ex.          "#EC EMPTY_CATCH
     ENDTRY.
   ENDMETHOD.
 
@@ -204,30 +270,45 @@ CLASS ltcl_llm_so_default IMPLEMENTATION.
 
     TYPES: BEGIN OF item_type,
              item_id TYPE i,
-             details TYPE STANDARD TABLE OF detail_type WITH EMPTY KEY,
+             details TYPE STANDARD TABLE OF detail_type WITH DEFAULT KEY,
            END OF item_type.
 
     TYPES: BEGIN OF order_type,
              id       TYPE i,
              customer TYPE string,
-             items    TYPE STANDARD TABLE OF item_type WITH EMPTY KEY,
+             items    TYPE STANDARD TABLE OF item_type WITH DEFAULT KEY,
              total    TYPE decfloat34,
            END OF order_type.
 
     TYPES: BEGIN OF root_type,
-             orders TYPE STANDARD TABLE OF order_type WITH EMPTY KEY,
+             orders TYPE STANDARD TABLE OF order_type WITH DEFAULT KEY,
              meta   TYPE string,
            END OF root_type.
 
     DATA descriptions TYPE zif_llm_so=>def_descriptions.
 
-    descriptions = VALUE #(
-      ( fieldname = 'orders' description = 'Order List' )
-      ( fieldname = 'orders-items' description = 'Order Items' )
-      ( fieldname = 'orders-items-details' description = 'Item Details' ) ).
+    DATA temp28 TYPE zif_llm_so=>def_descriptions.
+    DATA temp29 LIKE LINE OF temp28.
+    DATA temp30 TYPE REF TO cl_abap_datadescr.
+    DATA schema TYPE string.
+    CLEAR temp28.
+    
+    temp29-fieldname = 'orders'.
+    temp29-description = 'Order List'.
+    INSERT temp29 INTO TABLE temp28.
+    temp29-fieldname = 'orders-items'.
+    temp29-description = 'Order Items'.
+    INSERT temp29 INTO TABLE temp28.
+    temp29-fieldname = 'orders-items-details'.
+    temp29-description = 'Item Details'.
+    INSERT temp29 INTO TABLE temp28.
+    descriptions = temp28.
 
-    DATA(schema) = cut->zif_llm_tool_parser~parse(
-        data_desc = CAST #( cl_abap_datadescr=>describe_by_name( 'ROOT_TYPE' ) )
+    
+    temp30 ?= cl_abap_datadescr=>describe_by_name( 'ROOT_TYPE' ).
+    
+    schema = cut->zif_llm_tool_parser~parse(
+        data_desc = temp30
         descriptions = descriptions ).
 
     "Check structure hierarchy
@@ -273,17 +354,30 @@ CLASS ltcl_llm_so_default IMPLEMENTATION.
            END OF detail_type.
 
     TYPES: BEGIN OF test_type,
-             items TYPE STANDARD TABLE OF detail_type WITH EMPTY KEY,
+             items TYPE STANDARD TABLE OF detail_type WITH DEFAULT KEY,
            END OF test_type.
 
     DATA descriptions TYPE zif_llm_so=>def_descriptions.
 
-    descriptions = VALUE #(
-      ( fieldname = 'items' description = 'Items List' )
-      ( fieldname = 'items-code' description = 'Item Code' ) ).
+    DATA temp31 TYPE zif_llm_so=>def_descriptions.
+    DATA temp32 LIKE LINE OF temp31.
+    DATA temp33 TYPE REF TO cl_abap_datadescr.
+    DATA schema TYPE string.
+    CLEAR temp31.
+    
+    temp32-fieldname = 'items'.
+    temp32-description = 'Items List'.
+    INSERT temp32 INTO TABLE temp31.
+    temp32-fieldname = 'items-code'.
+    temp32-description = 'Item Code'.
+    INSERT temp32 INTO TABLE temp31.
+    descriptions = temp31.
 
-    DATA(schema) = cut->zif_llm_tool_parser~parse(
-        data_desc = CAST #( cl_abap_datadescr=>describe_by_name( 'TEST_TYPE' ) )
+    
+    temp33 ?= cl_abap_datadescr=>describe_by_name( 'TEST_TYPE' ).
+    
+    schema = cut->zif_llm_tool_parser~parse(
+        data_desc = temp33
         descriptions = descriptions ).
 
     cl_abap_unit_assert=>assert_char_cp(
@@ -294,12 +388,16 @@ CLASS ltcl_llm_so_default IMPLEMENTATION.
   METHOD test_multiple_tables_ordering.
     "Test correct comma placement between multiple tables
     TYPES: BEGIN OF test_type,
-             table1 TYPE STANDARD TABLE OF string WITH EMPTY KEY,
+             table1 TYPE STANDARD TABLE OF string WITH DEFAULT KEY,
              field  TYPE string,
-             table2 TYPE STANDARD TABLE OF i WITH EMPTY KEY,
+             table2 TYPE STANDARD TABLE OF i WITH DEFAULT KEY,
            END OF test_type.
 
-    DATA(schema) = cut->zif_llm_tool_parser~parse( CAST #( cl_abap_datadescr=>describe_by_name( 'TEST_TYPE' ) ) ).
+    DATA temp34 TYPE REF TO cl_abap_datadescr.
+    DATA schema TYPE string.
+    temp34 ?= cl_abap_datadescr=>describe_by_name( 'TEST_TYPE' ).
+    
+    schema = cut->zif_llm_tool_parser~parse( temp34 ).
 
     cl_abap_unit_assert=>assert_char_cp(
       act = schema
@@ -314,8 +412,12 @@ CLASS ltcl_llm_so_default IMPLEMENTATION.
 
     DATA descriptions TYPE zif_llm_so=>def_descriptions.
 
-    DATA(schema) = cut->zif_llm_tool_parser~parse(
-        data_desc = CAST #( cl_abap_datadescr=>describe_by_name( 'TEST_TYPE' ) )
+    DATA temp35 TYPE REF TO cl_abap_datadescr.
+    DATA schema TYPE string.
+    temp35 ?= cl_abap_datadescr=>describe_by_name( 'TEST_TYPE' ).
+    
+    schema = cut->zif_llm_tool_parser~parse(
+        data_desc = temp35
         descriptions = descriptions ).
 
     cl_abap_unit_assert=>assert_char_cp(

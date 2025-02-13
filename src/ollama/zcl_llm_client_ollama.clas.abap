@@ -41,7 +41,7 @@ CLASS zcl_llm_client_ollama DEFINITION
     TYPES: BEGIN OF ollama_message,
              role       TYPE string,
              content    TYPE string,
-             tool_calls TYPE STANDARD TABLE OF ollama_tool_call WITH EMPTY KEY,
+             tool_calls TYPE STANDARD TABLE OF ollama_tool_call WITH DEFAULT KEY,
            END OF ollama_message.
 
     TYPES: BEGIN OF ollama_response,
@@ -61,8 +61,7 @@ CLASS zcl_llm_client_ollama IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD get_client.
-    result = NEW zcl_llm_client_ollama( client_config   = client_config
-                                        provider_config = provider_config ).
+    CREATE OBJECT result TYPE zcl_llm_client_ollama EXPORTING client_config = client_config provider_config = provider_config.
   ENDMETHOD.
 
   METHOD get_http_client.
@@ -74,6 +73,8 @@ CLASS zcl_llm_client_ollama IMPLEMENTATION.
     " OLLAMA supports optional API Key via custom headers
     " Format is HeaderName:ApiKey
     DATA auth_value TYPE string.
+      DATA api_header TYPE string.
+      DATA api_key TYPE string.
 
     IF provider_config-auth_encrypted IS NOT INITIAL.
       DATA(llm_badi) = zcl_llm_common=>get_llm_badi( ).
@@ -83,22 +84,34 @@ CLASS zcl_llm_client_ollama IMPLEMENTATION.
       auth_value = enc_class->decrypt( provider_config-auth_encrypted ).
     ENDIF.
     IF provider_config-auth_type = 'A'.
-      SPLIT auth_value AT ':' INTO DATA(api_header) DATA(api_key).
+      
+      
+      SPLIT auth_value AT ':' INTO api_header api_key.
       client->set_header( name  = api_header
                           value = api_key ).
     ENDIF.
   ENDMETHOD.
 
   METHOD build_request_json.
+      DATA modified_request LIKE request.
+      DATA last_line TYPE i.
+        FIELD-SYMBOLS <message> TYPE zllm_msg.
+    DATA json TYPE string.
+    DATA option_parameters TYPE zllm_keyvalues.
+      DATA first_line LIKE abap_true.
+      DATA parameter LIKE LINE OF option_parameters.
     " Handle Ollama-specific structured output
     IF request-use_structured_output = abap_true.
       " We need to modify the request before passing it to the base implementation
-      DATA(modified_request) = request.
+      
+      modified_request = request.
       " Turn off structured output flag so base implementation doesn't add response_format
       modified_request-use_structured_output = abap_false.
-      DATA(last_line) = lines( modified_request-messages ).
+      
+      last_line = lines( modified_request-messages ).
       IF last_line > 0.
-        ASSIGN modified_request-messages[ last_line ] TO FIELD-SYMBOL(<message>).
+        
+        READ TABLE modified_request-messages INDEX last_line ASSIGNING <message>.
         <message>-content = |{ <message>-content } Respond in JSON based on the following schema: |
                          && |{ request-structured_output->get_schema( ) }| ##NO_TEXT.
       ENDIF.
@@ -107,7 +120,8 @@ CLASS zcl_llm_client_ollama IMPLEMENTATION.
     ENDIF.
 
     " Call base implementation with potentially modified request
-    DATA(json) = super->build_request_json( modified_request ).
+    
+    json = super->build_request_json( modified_request ).
 
     " Remove the last closing brace
     REPLACE REGEX '\}$' IN json WITH ''.
@@ -121,12 +135,15 @@ CLASS zcl_llm_client_ollama IMPLEMENTATION.
     ENDIF.
 
     " Add options in Ollama format if available
-    DATA(option_parameters) = request-options->get_paramters( ).
+    
+    option_parameters = request-options->get_paramters( ).
     IF lines( option_parameters ) > 0.
       json = |{ json },"options":\{|.
-      DATA(first_line) = abap_true.
+      
+      first_line = abap_true.
 
-      LOOP AT option_parameters INTO DATA(parameter).
+      
+      LOOP AT option_parameters INTO parameter.
         IF first_line = abap_true.
           json = |{ json }"{ parameter-key }":{ parameter-value }|.
           first_line = abap_false.
@@ -150,6 +167,14 @@ CLASS zcl_llm_client_ollama IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD handle_http_response.
+    DATA response TYPE ollama_response.
+      FIELD-SYMBOLS <tool> LIKE LINE OF request-tools.
+        DATA details TYPE zif_llm_tool=>tool_details.
+        FIELD-SYMBOLS <tool_call> LIKE LINE OF response-message-tool_calls.
+              DATA func_result TYPE REF TO data.
+              DATA temp1 TYPE zllm_tool_call.
+              DATA temp2 TYPE zllm_msg.
+              DATA message_text TYPE string.
     IF http_response-code >= 400.
       result-error-http_code  = http_response-code.
       result-error-error_text = http_response-message.
@@ -160,18 +185,21 @@ CLASS zcl_llm_client_ollama IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    DATA response TYPE ollama_response.
+    
 
     zcl_llm_common=>from_json( EXPORTING json = http_response-response
                                CHANGING  data = response ).
 
-    result-choice = VALUE #( finish_reason = response-done_reason
-                             message       = VALUE #( role    = response-message-role
-                                                      content = response-message-content ) ).
+    CLEAR result-choice.
+    result-choice-finish_reason = response-done_reason.
+    CLEAR result-choice-message.
+    result-choice-message-role = response-message-role.
+    result-choice-message-content = response-message-content.
 
-    result-usage  = VALUE #( completion_tokens = response-eval_count
-                             prompt_tokens     = response-prompt_eval_count
-                             total_tokens      = response-eval_count + response-prompt_eval_count ).
+    CLEAR result-usage.
+    result-usage-completion_tokens = response-eval_count.
+    result-usage-prompt_tokens = response-prompt_eval_count.
+    result-usage-total_tokens = response-eval_count + response-prompt_eval_count.
 
     IF request-use_structured_output = abap_true.
       parse_structured_output( EXPORTING content  = response-message-content
@@ -181,12 +209,15 @@ CLASS zcl_llm_client_ollama IMPLEMENTATION.
 
     " There can be multiple tool calls, we need to map them properly to the available tools.
     IF request-tool_choice <> zif_llm_chat_request=>tool_choice_none.
-      LOOP AT request-tools ASSIGNING FIELD-SYMBOL(<tool>).
-        DATA(details) = <tool>->get_tool_details( ).
+      
+      LOOP AT request-tools ASSIGNING <tool>.
+        
+        details = <tool>->get_tool_details( ).
 
-        LOOP AT response-message-tool_calls ASSIGNING FIELD-SYMBOL(<tool_call>) WHERE function-name = details-name.
+        
+        LOOP AT response-message-tool_calls ASSIGNING <tool_call> WHERE function-name = details-name.
           TRY.
-              DATA func_result TYPE REF TO data.
+              
               CREATE DATA func_result TYPE HANDLE details-parameters-data_desc.
 
               " Parse the JSON arguments
@@ -194,24 +225,33 @@ CLASS zcl_llm_client_ollama IMPLEMENTATION.
                                          CHANGING  data = func_result ).
 
               " Add tool call to response
-              APPEND VALUE #( id       = ``
-                              type     = zif_llm_tool=>type_function
-                              function = VALUE #( name          = details-name
-                                                  arguments     = func_result
-                                                  json_response = <tool_call>-function-arguments ) )
+              
+              CLEAR temp1.
+              temp1-id = ``.
+              temp1-type = zif_llm_tool=>type_function.
+              CLEAR temp1-function.
+              temp1-function-name = details-name.
+              temp1-function-arguments = func_result.
+              temp1-function-json_response = <tool_call>-function-arguments.
+              APPEND temp1
                      TO result-choice-tool_calls.
 
               " For Ollama, we need to use the unescaped JSON directly
-              result-choice-message = VALUE #( BASE result-choice-message
-                                               role    = zif_llm_client=>role_tool
-                                               name    = details-name
-                                               content = <tool_call>-function-arguments ).
+              
+              CLEAR temp2.
+              temp2 = result-choice-message.
+              temp2-role = zif_llm_client=>role_tool.
+              temp2-name = details-name.
+              temp2-content = <tool_call>-function-arguments.
+              result-choice-message = temp2.
 
             CATCH cx_root.
               result-success = abap_false.
-              MESSAGE ID 'ZLLM_CLIENT' TYPE 'E' NUMBER 016 WITH <tool_call>-function-name INTO DATA(message_text).
-              result-error = VALUE #( tool_parse_error = abap_true
-                                      error_text       = message_text ).
+              
+              MESSAGE ID 'ZLLM_CLIENT' TYPE 'E' NUMBER 016 WITH <tool_call>-function-name INTO message_text.
+              CLEAR result-error.
+              result-error-tool_parse_error = abap_true.
+              result-error-error_text = message_text.
               RETURN.
           ENDTRY.
         ENDLOOP.
@@ -220,8 +260,9 @@ CLASS zcl_llm_client_ollama IMPLEMENTATION.
         IF sy-subrc <> 0 AND request-tool_choice = zif_llm_chat_request=>tool_choice_required.
           result-success = abap_false.
           MESSAGE ID 'ZLLM_CLIENT' TYPE 'E' NUMBER 017 WITH details-name INTO message_text.
-          result-error = VALUE #( tool_parse_error = abap_true
-                                  error_text       = message_text ).
+          CLEAR result-error.
+          result-error-tool_parse_error = abap_true.
+          result-error-error_text = message_text.
           RETURN.
         ENDIF.
       ENDLOOP.
@@ -231,9 +272,11 @@ CLASS zcl_llm_client_ollama IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD parse_message.
+      FIELD-SYMBOLS <tool_call> LIKE LINE OF message-tool_calls.
     IF lines( message-tool_calls ) > 0.
       result = |\{"role":"{ message-role }","tool_calls":[|.
-      LOOP AT message-tool_calls ASSIGNING FIELD-SYMBOL(<tool_call>).
+      
+      LOOP AT message-tool_calls ASSIGNING <tool_call>.
         IF sy-tabix <> 1.
           result = |{ result },|.
         ENDIF.
