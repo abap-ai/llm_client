@@ -155,7 +155,7 @@ CLASS zcl_llm_so_ge IMPLEMENTATION.
     ENDIF.
 
     CASE element_descriptor->type_kind.
-      WHEN cl_abap_typedescr=>typekind_int OR cl_abap_typedescr=>typekind_int8.
+      WHEN cl_abap_typedescr=>typekind_int.
         append_to_schema( |"type":"integer"| ).
       WHEN cl_abap_typedescr=>typekind_decfloat16 OR cl_abap_typedescr=>typekind_decfloat34.
         append_to_schema( |"type":"number"| ).
