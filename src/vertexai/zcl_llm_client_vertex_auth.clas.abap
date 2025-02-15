@@ -85,7 +85,7 @@ CLASS zcl_llm_client_vertex_auth IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD is_valid.
-    DATA current_timestamp TYPE timestamp.
+    DATA current_timestamp TYPE timestampl.
     DATA valid TYPE i.
     DATA temp1 TYPE xsdboolean.
 
@@ -115,7 +115,7 @@ DATA scope TYPE string.
 DATA iat TYPE i.
 DATA exp TYPE i.
 DATA END OF payload_body.
-    DATA timestamp TYPE p LENGTH 8 DECIMALS 0.
+    DATA timestamp TYPE timestampl.
     DATA date TYPE d.
     DATA time TYPE t.
     DATA unix_time TYPE string.
@@ -142,7 +142,8 @@ DATA END OF oauth_response.
     IF provider-auth_encrypted IS NOT INITIAL.
       DATA(llm_badi) = zcl_llm_common=>get_llm_badi( ).
       CALL BADI llm_badi->get_encryption_impl
-        RECEIVING result = DATA(enc_class).
+        RECEIVING
+          result = DATA(enc_class).
       auth_config = enc_class->decrypt( provider-auth_encrypted ).
     ELSE.
       
@@ -302,8 +303,8 @@ DATA END OF oauth_response.
     zcl_llm_common=>from_json( EXPORTING json = response
                                CHANGING  data = oauth_response ).
     result-valid_until = timestamp.
-    result-valid_until = cl_abap_tstmp=>add_to_short( tstmp = result-valid_until
-                                                      secs  = oauth_response-expires_in ).
+    result-valid_until = cl_abap_tstmp=>add( tstmp = result-valid_until
+                                             secs  = oauth_response-expires_in ).
     result-content     = oauth_response-access_token.
 
     IF result-content IS INITIAL.

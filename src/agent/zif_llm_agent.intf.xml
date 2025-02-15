@@ -1,0 +1,142 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<abapGit version="v1.0.0" serializer="LCL_OBJECT_INTF" serializer_version="v1.0.0">
+ <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+  <asx:values>
+   <VSEOINTERF>
+    <CLSNAME>ZIF_LLM_AGENT</CLSNAME>
+    <LANGU>E</LANGU>
+    <DESCRIPT>Agent Interface</DESCRIPT>
+    <EXPOSURE>2</EXPOSURE>
+    <STATE>1</STATE>
+    <UNICODE>X</UNICODE>
+   </VSEOINTERF>
+   <DESCRIPTIONS>
+    <SEOCOMPOTX>
+     <CMPNAME>ADD_TOOL</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Add a tool to the agent</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>ADD_TOOLS</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Add multiple tools</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>EXECUTE</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Executes the agent&apos;s main task</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>GET_CONTEXT</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Gets the agent&apos;s context</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>GET_MEMORY</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Gets agent memory</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>GET_OPTIONS</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Get options reference</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>GET_STATUS</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Gets current agent status</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>GET_TOOLS</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Get configured tools</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>SET_CONTEXT</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Sets the agent&apos;s context</DESCRIPT>
+    </SEOCOMPOTX>
+   </DESCRIPTIONS>
+   <DESCRIPTIONS_SUB>
+    <SEOSUBCOTX>
+     <CMPNAME>ADD_TOOL</CMPNAME>
+     <SCONAME>TOOL</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Tool to add</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>ADD_TOOL</CMPNAME>
+     <SCONAME>ZCX_LLM_AGENT_ERROR</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Tool error</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>ADD_TOOLS</CMPNAME>
+     <SCONAME>TOOLS</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Tools to add</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>ADD_TOOLS</CMPNAME>
+     <SCONAME>ZCX_LLM_AGENT_ERROR</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Tool error</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>EXECUTE</CMPNAME>
+     <SCONAME>PROMPT</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Initial prompt</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>EXECUTE</CMPNAME>
+     <SCONAME>RESULT</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Execution result</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>EXECUTE</CMPNAME>
+     <SCONAME>ZCX_LLM_AGENT_ERROR</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Agent execution error</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>GET_CONTEXT</CMPNAME>
+     <SCONAME>RESULT</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Current context</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>GET_MEMORY</CMPNAME>
+     <SCONAME>RESULT</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Memory entries</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>GET_OPTIONS</CMPNAME>
+     <SCONAME>RESULT</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Option reference</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>GET_STATUS</CMPNAME>
+     <SCONAME>RESULT</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Current status</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>GET_TOOLS</CMPNAME>
+     <SCONAME>RESULT</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Available tools</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>SET_CONTEXT</CMPNAME>
+     <SCONAME>MESSAGES</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Context messages</DESCRIPT>
+    </SEOSUBCOTX>
+   </DESCRIPTIONS_SUB>
+  </asx:values>
+ </asx:abap>
+</abapGit>

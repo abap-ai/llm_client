@@ -1,0 +1,115 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<abapGit version="v1.0.0" serializer="LCL_OBJECT_INTF" serializer_version="v1.0.0">
+ <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+  <asx:values>
+   <VSEOINTERF>
+    <CLSNAME>ZIF_LLM_AGENT_MANAGER</CLSNAME>
+    <LANGU>E</LANGU>
+    <DESCRIPT>Agent Manager Interface</DESCRIPT>
+    <EXPOSURE>2</EXPOSURE>
+    <STATE>1</STATE>
+    <UNICODE>X</UNICODE>
+   </VSEOINTERF>
+   <DESCRIPTIONS>
+    <SEOCOMPOTX>
+     <CMPNAME>EXECUTE_WORKFLOW</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Executes the defined workflow</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>GET_EXECUTION_HISTORY</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Retrieves execution history</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>GET_STATUS</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Gets current execution status</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>REGISTER_AGENT</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Registers an agent for the workflow</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>SET_WORKFLOW</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Defines workflow steps with execution strategy</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>STOP_WORKFLOW</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Stops workflow execution</DESCRIPT>
+    </SEOCOMPOTX>
+   </DESCRIPTIONS>
+   <DESCRIPTIONS_SUB>
+    <SEOSUBCOTX>
+     <CMPNAME>EXECUTE_WORKFLOW</CMPNAME>
+     <SCONAME>CONFIG</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Execution configuration</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>EXECUTE_WORKFLOW</CMPNAME>
+     <SCONAME>RESULT</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Execution summary</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>EXECUTE_WORKFLOW</CMPNAME>
+     <SCONAME>ZCX_LLM_AGENT_ERROR</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Execution error</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>GET_EXECUTION_HISTORY</CMPNAME>
+     <SCONAME>RESULT</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Combined memory entries from all agents</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>GET_STATUS</CMPNAME>
+     <SCONAME>RESULT</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Current execution summary</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>REGISTER_AGENT</CMPNAME>
+     <SCONAME>AGENT</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Agent to register</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>REGISTER_AGENT</CMPNAME>
+     <SCONAME>NAME</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Name for workflow reference</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>REGISTER_AGENT</CMPNAME>
+     <SCONAME>ZCX_LLM_AGENT_ERROR</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Registration error</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>SET_WORKFLOW</CMPNAME>
+     <SCONAME>STEPS</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Workflow step definitions</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>SET_WORKFLOW</CMPNAME>
+     <SCONAME>ZCX_LLM_AGENT_ERROR</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Invalid workflow definition</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>STOP_WORKFLOW</CMPNAME>
+     <SCONAME>ZCX_LLM_AGENT_ERROR</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Stop error</DESCRIPT>
+    </SEOSUBCOTX>
+   </DESCRIPTIONS_SUB>
+  </asx:values>
+ </asx:abap>
+</abapGit>

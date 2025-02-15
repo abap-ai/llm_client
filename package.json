@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "prepare_downport": "git clone https://github.com/abap-ai/llm_client.git && rm -rf src/* && cp -r llm_client/src/* src/ && rm -rf llm_client",
+    "prepare_downport": "git clone -b test_downport_optimize https://github.com/abap-ai/llm_client.git && rm -rf src/* && cp -r llm_client/src/* src/ && rm -rf llm_client",
     "downport": "abaplint --fix ./abaplint-downport.jsonc",
     "delete_testclasses": "find src -type f -name '*.clas.testclasses.abap' -delete ",
     "update_xml_files": "find src -type f -name '*.clas.xml' -exec sed -i '/^[[:space:]]*<WITH_UNIT_TESTS>X<\\\\/WITH_UNIT_TESTS>[[:space:]]*$/d' {} \\;"

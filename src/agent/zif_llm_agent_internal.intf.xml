@@ -1,0 +1,98 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<abapGit version="v1.0.0" serializer="LCL_OBJECT_INTF" serializer_version="v1.0.0">
+ <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+  <asx:values>
+   <VSEOINTERF>
+    <CLSNAME>ZIF_LLM_AGENT_INTERNAL</CLSNAME>
+    <LANGU>E</LANGU>
+    <DESCRIPT>Internal Agent Interface</DESCRIPT>
+    <EXPOSURE>2</EXPOSURE>
+    <STATE>1</STATE>
+    <UNICODE>X</UNICODE>
+   </VSEOINTERF>
+   <DESCRIPTIONS>
+    <SEOCOMPOTX>
+     <CMPNAME>ADD_TO_MEMORY</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Adds entry to memory</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>CAN_PROCEED</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Checks if agent can proceed</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>EXECUTE_TOOL</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Executes tool call</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>PREPARE_NEXT_ITERATION</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Prepares next iteration</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>PROCESS_RESPONSE</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Processes LLM response</DESCRIPT>
+    </SEOCOMPOTX>
+   </DESCRIPTIONS>
+   <DESCRIPTIONS_SUB>
+    <SEOSUBCOTX>
+     <CMPNAME>ADD_TO_MEMORY</CMPNAME>
+     <SCONAME>ENTRY</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Memory entry</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>CAN_PROCEED</CMPNAME>
+     <SCONAME>RESULT</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>True if can proceed</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>EXECUTE_TOOL</CMPNAME>
+     <SCONAME>RESULT</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Tool execution result</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>EXECUTE_TOOL</CMPNAME>
+     <SCONAME>TOOL_CALL</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Tool call details</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>EXECUTE_TOOL</CMPNAME>
+     <SCONAME>ZCX_LLM_AGENT_ERROR</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Tool execution error</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>PREPARE_NEXT_ITERATION</CMPNAME>
+     <SCONAME>ZCX_LLM_AGENT_ERROR</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Preparation error</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>PROCESS_RESPONSE</CMPNAME>
+     <SCONAME>RESPONSE</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>LLM response</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>PROCESS_RESPONSE</CMPNAME>
+     <SCONAME>RESULT</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Processing result</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>PROCESS_RESPONSE</CMPNAME>
+     <SCONAME>ZCX_LLM_AGENT_ERROR</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Processing error</DESCRIPT>
+    </SEOSUBCOTX>
+   </DESCRIPTIONS_SUB>
+  </asx:values>
+ </asx:abap>
+</abapGit>

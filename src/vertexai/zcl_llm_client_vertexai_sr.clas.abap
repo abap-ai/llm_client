@@ -10,7 +10,7 @@ CLASS zcl_llm_client_vertexai_sr DEFINITION
 
     TYPES:
       BEGIN OF token,
-        valid_until TYPE timestamp,
+        valid_until TYPE timestampl,
         content     TYPE string,
         provider    TYPE zllm_provider_name,
       END OF token.

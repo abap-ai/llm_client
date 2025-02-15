@@ -69,6 +69,7 @@ CLASS zcl_llm_so_js DEFINITION
       IMPORTING !description  TYPE zif_llm_so=>def_description
       RETURNING VALUE(result) TYPE string.
 
+    CONSTANTS typekind_int8 TYPE abap_typekind VALUE '8' ##NO_TEXT.
   PRIVATE SECTION.
 ENDCLASS.
 
@@ -152,7 +153,7 @@ CLASS zcl_llm_so_js IMPLEMENTATION.
     ENDIF.
 
     CASE element_descriptor->type_kind.
-      WHEN cl_abap_typedescr=>typekind_int OR cl_abap_typedescr=>typekind_int8.
+      WHEN cl_abap_typedescr=>typekind_int OR typekind_int8.
         append_to_schema( |"type":"integer"| ).
       WHEN cl_abap_typedescr=>typekind_decfloat16 OR cl_abap_typedescr=>typekind_decfloat34.
         append_to_schema( |"type":"number"| ).
