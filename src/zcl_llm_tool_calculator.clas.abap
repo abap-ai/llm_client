@@ -172,21 +172,21 @@ CLASS zcl_llm_tool_calculator IMPLEMENTATION.
           DATA temp10 LIKE sy-tabix.
           DATA temp1 LIKE LINE OF result.
           DATA temp2 LIKE sy-tabix.
-          DATA temp16 LIKE LINE OF result.
-          DATA temp17 LIKE sy-tabix.
-          DATA temp18 LIKE LINE OF result.
-          DATA temp19 LIKE sy-tabix.
-          DATA temp20 LIKE LINE OF result.
-          DATA temp21 LIKE sy-tabix.
-          DATA temp22 LIKE LINE OF result.
-          DATA temp23 LIKE sy-tabix.
-          DATA temp24 LIKE LINE OF result.
-          DATA temp25 LIKE sy-tabix.
+          DATA temp3 LIKE LINE OF result.
+          DATA temp16 LIKE sy-tabix.
+          DATA temp17 LIKE LINE OF result.
+          DATA temp18 LIKE sy-tabix.
+          DATA temp19 LIKE LINE OF result.
+          DATA temp20 LIKE sy-tabix.
+          DATA temp21 LIKE LINE OF result.
+          DATA temp22 LIKE sy-tabix.
+          DATA temp23 LIKE LINE OF result.
+          DATA temp24 LIKE sy-tabix.
               DATA temp11 TYPE zcl_llm_tool_calculator=>token.
               DATA temp12 TYPE zcl_llm_tool_calculator=>token.
             DATA temp13 TYPE zcl_llm_tool_calculator=>token.
-          DATA temp14 TYPE undefined.
-          DATA temp3 TYPE REF TO cx_sy_conversion_no_number.
+          DATA value TYPE string.
+          DATA temp14 TYPE REF TO cx_sy_conversion_no_number.
       DATA temp15 TYPE REF TO cx_sy_conversion_no_number.
 
     length = strlen( expression ) - 1.
@@ -265,41 +265,41 @@ CLASS zcl_llm_tool_calculator IMPLEMENTATION.
           ENDIF.
           
           
-          temp17 = sy-tabix.
-          READ TABLE result INDEX lines( result ) INTO temp16.
-          sy-tabix = temp17.
+          temp16 = sy-tabix.
+          READ TABLE result INDEX lines( result ) INTO temp3.
+          sy-tabix = temp16.
           IF sy-subrc <> 0.
             RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
           ENDIF.
           
           
-          temp19 = sy-tabix.
-          READ TABLE result INDEX lines( result ) INTO temp18.
-          sy-tabix = temp19.
+          temp18 = sy-tabix.
+          READ TABLE result INDEX lines( result ) INTO temp17.
+          sy-tabix = temp18.
           IF sy-subrc <> 0.
             RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
           ENDIF.
           
           
-          temp21 = sy-tabix.
-          READ TABLE result INDEX lines( result ) INTO temp20.
-          sy-tabix = temp21.
+          temp20 = sy-tabix.
+          READ TABLE result INDEX lines( result ) INTO temp19.
+          sy-tabix = temp20.
           IF sy-subrc <> 0.
             RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
           ENDIF.
           
           
-          temp23 = sy-tabix.
-          READ TABLE result INDEX lines( result ) INTO temp22.
-          sy-tabix = temp23.
+          temp22 = sy-tabix.
+          READ TABLE result INDEX lines( result ) INTO temp21.
+          sy-tabix = temp22.
           IF sy-subrc <> 0.
             RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
           ENDIF.
           
           
-          temp25 = sy-tabix.
-          READ TABLE result INDEX lines( result ) INTO temp24.
-          sy-tabix = temp25.
+          temp24 = sy-tabix.
+          READ TABLE result INDEX lines( result ) INTO temp23.
+          sy-tabix = temp24.
           IF sy-subrc <> 0.
             RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
           ENDIF.
@@ -307,11 +307,11 @@ CLASS zcl_llm_tool_calculator IMPLEMENTATION.
              OR (     lines( result ) > 0
                   AND (    temp9-value = '('
                         OR temp1-value = '+'
-                        OR temp16-value = '-'
-                        OR temp18-value = '*'
-                        OR temp20-value = '/'
-                        OR temp22-value = '**'
-                        OR temp24-value = 'MOD' ) ).
+                        OR temp3-value = '-'
+                        OR temp17-value = '*'
+                        OR temp19-value = '/'
+                        OR temp21-value = '**'
+                        OR temp23-value = 'MOD' ) ).
             " This is a negative number - read the number part
             next_pos = index + 1.
             IF next_pos <= length AND expression+next_pos(1) CA '0123456789.'.
@@ -350,11 +350,12 @@ CLASS zcl_llm_tool_calculator IMPLEMENTATION.
 
         WHEN OTHERS.
           " Raise exception for invalid characters
+          " Simplify the logic to support downports which fail with CONV # at this location
           
-          temp14 = current_char.
+          value = current_char.
           
-          CREATE OBJECT temp3 TYPE cx_sy_conversion_no_number EXPORTING value = temp14.
-          RAISE EXCEPTION temp3.
+          CREATE OBJECT temp14 TYPE cx_sy_conversion_no_number EXPORTING value = value.
+          RAISE EXCEPTION temp14.
       ENDCASE.
       index = index + 1.
     ENDWHILE.
