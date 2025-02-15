@@ -71,11 +71,11 @@ CLASS zcl_llm_tool_calculator DEFINITION
 
     METHODS pop_from_stack
       EXPORTING result TYPE string
-      CHANGING  !stack TYPE STANDARD TABLE.
+      CHANGING  !stack TYPE string_table.
 
     METHODS peek_stack
       EXPORTING result TYPE string
-      CHANGING  !stack TYPE STANDARD TABLE.
+      CHANGING  !stack TYPE string_table.
 
     DATA output       TYPE calculation_output.
     DATA tool_call_id TYPE string.
@@ -545,6 +545,7 @@ CLASS zcl_llm_tool_calculator IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD peek_stack.
+
     DATA last_index TYPE i.
       DATA temp29 LIKE LINE OF stack.
       DATA temp30 LIKE sy-tabix.

@@ -98,7 +98,8 @@ CLASS zcl_llm_client_vertexai IMPLEMENTATION.
 
   METHOD zif_llm_client~chat.
         DATA token TYPE zcl_llm_client_vertexai_sr=>token.
-      DATA error TYPE REF TO ZCX_LLM_HTTP_ERROR.
+        DATA http_error TYPE REF TO zcx_llm_http_error.
+        DATA auth_error TYPE REF TO zcx_llm_authorization.
     " Set the auth header, everything else will be handled by the base class
     TRY.
         
@@ -106,11 +107,16 @@ CLASS zcl_llm_client_vertexai IMPLEMENTATION.
         client->set_header( name  = 'Authorization'
                             value = |Bearer { token-content }| ) ##NO_TEXT.
         response = super->zif_llm_client~chat( request ).
-      
-      CATCH zcx_llm_http_error
-            zcx_llm_authorization INTO error.
+        " We use two different catch entries due to downport issues
+        
+      CATCH zcx_llm_http_error INTO http_error.
         response-success = abap_false.
-        response-error-error_text = error->get_text( ).
+        response-error-error_text = http_error->get_text( ).
+        response-error-retrieable = abap_false.
+        
+      CATCH zcx_llm_authorization INTO auth_error.
+        response-success = abap_false.
+        response-error-error_text = auth_error->get_text( ).
         response-error-retrieable = abap_false.
     ENDTRY.
   ENDMETHOD.
