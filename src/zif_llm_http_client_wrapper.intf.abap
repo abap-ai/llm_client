@@ -63,4 +63,9 @@ PUBLIC.
   "! @parameter value | <p class="shorttext synchronized">Parameter Value</p>
   METHODS set_parmeter IMPORTING !name  TYPE string
                                  !value TYPE string.
+
+  "! <p class="shorttext synchronized">Get all current request headers</p>
+  "!
+  "! @parameter result | <p class="shorttext synchronized">Request Headers</p>
+  METHODS get_req_headers RETURNING VALUE(result) TYPE tihttpnvp.
 ENDINTERFACE.
