@@ -76,11 +76,11 @@ CLASS lcl_app IMPLEMENTATION.
     ENDIF.
 
     " Get user input text
-    DATA lt_text TYPE STANDARD TABLE OF char255.
+    DATA texts TYPE STANDARD TABLE OF char255.
 
-    text_editor_input->get_text_as_stream( IMPORTING text = lt_text ).
+    text_editor_input->get_text_as_stream( IMPORTING text = texts ).
 
-    user_message = concat_lines_of( table = lt_text
+    user_message = concat_lines_of( table = texts
                                     sep   = cl_abap_char_utilities=>cr_lf ).
 
     IF user_message IS INITIAL.
