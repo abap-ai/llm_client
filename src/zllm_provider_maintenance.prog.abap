@@ -8,7 +8,6 @@ CLASS lcl_app DEFINITION.
         provider_class       TYPE zllm_provider,
         rfc_destination      TYPE rfcdest,
         auth_rfc_destination TYPE rfcdest,
-        auth_type            TYPE zllm_auth_type,
         auth_value           TYPE zllm_auth_value,
         auth_encrypted       TYPE xstring,
       END OF provider_config,
@@ -46,9 +45,9 @@ ENDCLASS.
 CLASS lcl_popup_screen DEFINITION.
   PUBLIC SECTION.
     METHODS constructor IMPORTING provider TYPE lcl_app=>provider_config.
-    METHODS show        IMPORTING title    TYPE string.
+    METHODS show        IMPORTING !title   TYPE string.
 
-    METHODS pai IMPORTING ucomm TYPE sy-ucomm.
+    METHODS pai         IMPORTING ucomm    TYPE sy-ucomm.
 
     METHODS pbo.
 
@@ -66,7 +65,6 @@ CLASS lcl_popup_screen DEFINITION.
     DATA provider_class       TYPE zllm_provider.
     DATA rfc_destination      TYPE rfcdest.
     DATA auth_rfc_destination TYPE rfcdest.
-    DATA auth_type            TYPE zllm_auth_type.
     DATA text_editor          TYPE REF TO cl_gui_textedit.
     DATA custom_container     TYPE REF TO cl_gui_custom_container.
 
@@ -81,7 +79,6 @@ DATA: BEGIN OF screen_fields,
         provider_class       TYPE zllm_provider,
         rfc_destination      TYPE rfcdest,
         auth_rfc_destination TYPE rfcdest,
-        auth_type            TYPE zllm_auth_type,
       END OF screen_fields.
 
 CLASS lcl_app IMPLEMENTATION.
@@ -89,8 +86,7 @@ CLASS lcl_app IMPLEMENTATION.
     load_providers( ).
     DATA(llm_badi) = zcl_llm_common=>get_llm_badi( ).
     CALL BADI llm_badi->get_encryption_impl
-      RECEIVING
-        result = enc_class.
+      RECEIVING result = enc_class.
   ENDMETHOD.
 
   METHOD load_providers.
@@ -140,6 +136,7 @@ CLASS lcl_app IMPLEMENTATION.
 
   METHOD handle_action_change.
     DATA sel_rows TYPE lvc_t_row.
+
     grid->get_selected_rows( IMPORTING et_index_rows = sel_rows ).
     IF lines( sel_rows ) <> 1.
       MESSAGE 'Select one row'(014) TYPE 'E'.
@@ -164,6 +161,7 @@ CLASS lcl_app IMPLEMENTATION.
 
   METHOD handle_action_delete.
     DATA sel_rows TYPE lvc_t_row.
+
     grid->get_selected_rows( IMPORTING et_index_rows = sel_rows ).
     IF lines( sel_rows ) <> 1.
       MESSAGE 'Select one row'(014) TYPE 'E'.
@@ -189,6 +187,7 @@ CLASS lcl_app IMPLEMENTATION.
   METHOD save_provider.
     " Using a two step corresponding to avoid abaplint donwport issues
     DATA provider TYPE zllm_providers.
+
     provider = CORRESPONDING #( config ).
     MODIFY zllm_providers FROM @provider.
     IF sy-subrc = 0.
@@ -207,11 +206,10 @@ CLASS lcl_app IMPLEMENTATION.
   METHOD build_field_catalog.
     " This definition ensures I do not accidentially delete it as unused again ;-)
     DATA ensure_ddic_ref TYPE zllm_provider_disp ##NEEDED.
+
     CALL FUNCTION 'LVC_FIELDCATALOG_MERGE'
-      EXPORTING
-        i_structure_name = 'ZLLM_PROVIDER_DISP'
-      CHANGING
-        ct_fieldcat      = fieldcat.
+      EXPORTING i_structure_name = 'ZLLM_PROVIDER_DISP'
+      CHANGING  ct_fieldcat      = fieldcat.
 
     DELETE fieldcat WHERE fieldname = 'AUTH_VALUE'.
 
@@ -229,13 +227,11 @@ CLASS lcl_app IMPLEMENTATION.
   METHOD show_confirm_popup.
     DATA(answer) = ''.
     CALL FUNCTION 'POPUP_TO_CONFIRM'
-      EXPORTING
-        titlebar      = title
-        text_question = text
-        text_button_1 = 'Yes'
-        text_button_2 = 'No'
-      IMPORTING
-        answer        = answer.
+      EXPORTING titlebar      = title
+                text_question = text
+                text_button_1 = 'Yes'
+                text_button_2 = 'No'
+      IMPORTING answer        = answer.
 
     result = xsdbool( answer = '1' ).
   ENDMETHOD.
@@ -296,7 +292,6 @@ CLASS lcl_popup_screen IMPLEMENTATION.
     provider_class = provider-provider_class.
     rfc_destination = provider-rfc_destination.
     auth_rfc_destination = provider-auth_rfc_destination.
-    auth_type = provider-auth_type.
   ENDMETHOD.
 
   METHOD show.
@@ -357,17 +352,15 @@ CLASS lcl_popup_screen IMPLEMENTATION.
     text_editor->set_focus( text_editor ).
   ENDMETHOD.
 
-
   METHOD pbo.
     SET PF-STATUS 'POPUP200'.
     SET TITLEBAR 'TITLE200' WITH title.
 
     " Fill screen fields
-    screen_fields-provider_name   = provider_name.
-    screen_fields-provider_class  = provider_class.
-    screen_fields-rfc_destination = rfc_destination.
+    screen_fields-provider_name        = provider_name.
+    screen_fields-provider_class       = provider_class.
+    screen_fields-rfc_destination      = rfc_destination.
     screen_fields-auth_rfc_destination = auth_rfc_destination.
-    screen_fields-auth_type       = auth_type.
 
     " Always initialize and set content
     initialize_text_editor( ).
@@ -389,12 +382,11 @@ CLASS lcl_popup_screen IMPLEMENTATION.
         DATA text TYPE textlines.
         text_editor->get_text_as_r3table( IMPORTING table = text ).
 
-        result-provider_name   = screen_fields-provider_name.
-        result-provider_class  = screen_fields-provider_class.
-        result-rfc_destination = screen_fields-rfc_destination.
-        result-auth_type       = screen_fields-auth_type.
+        result-provider_name        = screen_fields-provider_name.
+        result-provider_class       = screen_fields-provider_class.
+        result-rfc_destination      = screen_fields-rfc_destination.
         result-auth_rfc_destination = screen_fields-auth_rfc_destination.
-        result-auth_value      = concat_lines_of( text ).
+        result-auth_value           = concat_lines_of( text ).
         cancelled = abap_false.
         cleanup_controls( ).
         LEAVE TO SCREEN 0.
@@ -437,7 +429,7 @@ ENDMODULE.
 *&      Module  USER_COMMAND_0200  INPUT
 *&---------------------------------------------------------------------*
 *       text
-*----------------------------------------------------------------------*
+" -----------------------------------------------------------------------
 MODULE user_command_0200 INPUT.
   popup_screen->pai( sy-ucomm ).
 ENDMODULE.

@@ -93,8 +93,7 @@ CLASS zcl_llm_client_aws IMPLEMENTATION.
     IF provider_config-auth_encrypted IS NOT INITIAL.
       DATA(llm_badi) = zcl_llm_common=>get_llm_badi( ).
       CALL BADI llm_badi->get_encryption_impl
-        RECEIVING
-          result = DATA(enc_class).
+        RECEIVING result = DATA(enc_class).
       auth_value = enc_class->decrypt( provider_config-auth_encrypted ).
     ENDIF.
 
@@ -106,9 +105,7 @@ CLASS zcl_llm_client_aws IMPLEMENTATION.
     credentials-secret_key = secret_key.
     credentials-region     = region.
     credentials-service    = 'bedrock'.
-    IF provider_config-auth_type = 'A'.
-      auth = NEW zcl_llm_client_aws_sigv4( credentials = credentials ).
-    ENDIF.
+    auth = NEW zcl_llm_client_aws_sigv4( credentials = credentials ).
   ENDMETHOD.
 
   METHOD zif_llm_client_int~chat.

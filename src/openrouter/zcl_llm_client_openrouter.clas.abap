@@ -63,10 +63,8 @@ CLASS zcl_llm_client_openrouter IMPLEMENTATION.
         RECEIVING result = DATA(enc_class).
       auth_value = enc_class->decrypt( provider_config-auth_encrypted ).
     ENDIF.
-    IF provider_config-auth_type = 'A'.
-      client->set_header( name  = 'Authorization'
-                          value = |Bearer { auth_value }| ) ##NO_TEXT.
-    ENDIF.
+    client->set_header( name  = 'Authorization'
+                        value = |Bearer { auth_value }| ) ##NO_TEXT.
   ENDMETHOD.
 
   METHOD create_structured_output.

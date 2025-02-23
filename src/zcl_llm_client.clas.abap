@@ -75,7 +75,7 @@ CLASS zcl_llm_client IMPLEMENTATION.
         " 429/529 are temporary rate limits/overload scenarios.
         " Add a short wait before retrying
         IF response-error-http_code = 429 OR response-error-http_code = 529.
-          WAIT UP TO 5 SECONDS.
+          WAIT UP TO 10 SECONDS.
         ENDIF.
         CLEAR response.
       ELSE.

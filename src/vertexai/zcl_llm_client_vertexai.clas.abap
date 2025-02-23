@@ -92,9 +92,7 @@ CLASS zcl_llm_client_vertexai IMPLEMENTATION.
   METHOD set_auth.
     " We cannot set any auth header now, we need to get an active token
     " right before every call instead. We just initialize the class.
-    IF provider_config-auth_type = 'B'.
-      auth = NEW zcl_llm_client_vertex_auth( ).
-    ENDIF.
+    auth = NEW zcl_llm_client_vertex_auth( ).
   ENDMETHOD.
 
   METHOD zif_llm_client_int~chat.

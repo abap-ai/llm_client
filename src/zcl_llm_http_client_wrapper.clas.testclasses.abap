@@ -37,7 +37,6 @@ ENDCLASS.
 CLASS ltcl_http_client_wrapper IMPLEMENTATION.
 
   METHOD setup.
-    provider_config-auth_type = space.
     provider_config-rfc_destination = test_destination.
 
     TRY.
@@ -136,7 +135,6 @@ CLASS ltcl_http_client_wrapper IMPLEMENTATION.
           provider_config TYPE zllm_providers.
 
     provider_config-rfc_destination = non_existent_dest.
-    provider_config-auth_type = space.
 
     TRY.
         DATA(failed_client) = NEW zcl_llm_http_client_wrapper(

@@ -61,14 +61,11 @@ CLASS zcl_llm_client_azureaif IMPLEMENTATION.
     IF provider_config-auth_encrypted IS NOT INITIAL.
       DATA(llm_badi) = zcl_llm_common=>get_llm_badi( ).
       CALL BADI llm_badi->get_encryption_impl
-        RECEIVING
-          result = DATA(enc_class).
+        RECEIVING result = DATA(enc_class).
       auth_value = enc_class->decrypt( provider_config-auth_encrypted ).
     ENDIF.
-    IF provider_config-auth_type = 'A'.
-      client->set_header( name  = 'api-key'
-                          value = auth_value ).
-    ENDIF.
+    client->set_header( name  = 'api-key'
+                        value = auth_value ).
   ENDMETHOD.
 
   METHOD create_structured_output.

@@ -244,12 +244,12 @@ CLASS zcl_llm_client_gemini IMPLEMENTATION.
 
   METHOD parse_message.
     IF lines( message-tool_calls ) > 0.
-      result = |\{"parts":[|.
+      result = |\{"role":"model","parts":[|.
       LOOP AT message-tool_calls ASSIGNING FIELD-SYMBOL(<tool_call>).
         IF sy-tabix <> 1.
           result = |{ result },|.
         ENDIF.
-        result = |{ result }\{"function_call":\{|
+        result = |{ result }\{"functionCall":\{|
               && |"name":"{ <tool_call>-function-name }",|
               && |"args":{ <tool_call>-function-json_response }\}\}|.
       ENDLOOP.
@@ -262,9 +262,14 @@ CLASS zcl_llm_client_gemini IMPLEMENTATION.
         WHEN zif_llm_client_int=>role_assistant OR zif_llm_client_int=>role_tool.
           role = 'model'.
       ENDCASE.
-      result = |\{"role":"{ role }","parts":[\{"text":"{
-               escape( val    = message-content
-                       format = cl_abap_format=>e_json_string ) }"\}]\}|.
+      IF message-role = zif_llm_client_int=>role_tool.
+        result = |\{"role":"{ role }","parts":[\{"functionResponse":\{"name":"{ message-name }"|
+              && |,"response":\{"name":"{ message-name }","content": { message-content }\}\}\}]\}|.
+      ELSE.
+        result = |\{"role":"{ role }","parts":[\{"text":"{
+                   escape( val    = message-content
+                           format = cl_abap_format=>e_json_string ) }"\}]\}|.
+      ENDIF.
     ENDIF.
   ENDMETHOD.
 

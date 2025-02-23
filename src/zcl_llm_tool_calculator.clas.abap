@@ -91,7 +91,7 @@ CLASS zcl_llm_tool_calculator IMPLEMENTATION.
 
     parameters-descriptions  = VALUE #(
         ( fieldname   = 'EXPRESSION'
-          description = 'Mathematical expression to evaluate. Supports +, -, *, /, **, MOD and parentheses' ) ) ##NO_TEXT.
+          description = 'Mathematical expression to evaluate. Supports +, -, *, /, **, MOD and parentheses.' ) ) ##NO_TEXT.
 
     result = VALUE #( name        = 'calculator'
                       description = 'Evaluates mathematical expressions. Supports +, -, *, /, **, MOD and parentheses'
