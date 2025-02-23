@@ -8,7 +8,7 @@ CLASS zcl_llm_client_vertexai DEFINITION
     CLASS-METHODS get_client
       IMPORTING client_config   TYPE zllm_clnt_config
                 provider_config TYPE zllm_providers
-      RETURNING VALUE(result)   TYPE REF TO zif_llm_client
+      RETURNING VALUE(result)   TYPE REF TO zif_llm_client_int
       RAISING   zcx_llm_validation
                 zcx_llm_authorization.
 
@@ -17,8 +17,8 @@ CLASS zcl_llm_client_vertexai DEFINITION
                 provider_config TYPE zllm_providers
       RAISING   zcx_llm_validation
                 zcx_llm_authorization.
-    METHODS zif_llm_client~chat REDEFINITION.
-    METHODS zif_llm_client~new_request REDEFINITION.
+    METHODS zif_llm_client_int~chat REDEFINITION.
+    METHODS zif_llm_client_int~new_request REDEFINITION.
   PROTECTED SECTION.
     METHODS: get_http_client REDEFINITION,
       set_auth REDEFINITION,
@@ -91,12 +91,10 @@ CLASS zcl_llm_client_vertexai IMPLEMENTATION.
   METHOD set_auth.
     " We cannot set any auth header now, we need to get an active token
     " right before every call instead. We just initialize the class.
-    IF provider_config-auth_type = 'B'.
-      CREATE OBJECT auth TYPE zcl_llm_client_vertex_auth.
-    ENDIF.
+    CREATE OBJECT auth TYPE zcl_llm_client_vertex_auth.
   ENDMETHOD.
 
-  METHOD zif_llm_client~chat.
+  METHOD zif_llm_client_int~chat.
         DATA token TYPE zcl_llm_client_vertexai_sr=>token.
         DATA http_error TYPE REF TO zcx_llm_http_error.
         DATA auth_error TYPE REF TO zcx_llm_authorization.
@@ -106,7 +104,7 @@ CLASS zcl_llm_client_vertexai IMPLEMENTATION.
         token = auth->get_token( provider_config ).
         client->set_header( name  = 'Authorization'
                             value = |Bearer { token-content }| ) ##NO_TEXT.
-        response = super->zif_llm_client~chat( request ).
+        response = super->zif_llm_client_int~chat( request ).
         " We use two different catch entries due to downport issues
         
       CATCH zcx_llm_http_error INTO http_error.
@@ -274,9 +272,9 @@ CLASS zcl_llm_client_vertexai IMPLEMENTATION.
     ELSE.
       
       CASE message-role.
-        WHEN zif_llm_client=>role_user.
-          role = zif_llm_client=>role_user.
-        WHEN zif_llm_client=>role_assistant OR zif_llm_client=>role_tool.
+        WHEN zif_llm_client_int=>role_user.
+          role = zif_llm_client_int=>role_user.
+        WHEN zif_llm_client_int=>role_assistant OR zif_llm_client_int=>role_tool.
           role = 'model'.
       ENDCASE.
       result = |\{"role":"{ role }","parts":[\{"text":"{
@@ -285,7 +283,7 @@ CLASS zcl_llm_client_vertexai IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
-  METHOD zif_llm_client~new_request.
+  METHOD zif_llm_client_int~new_request.
     DATA request TYPE zllm_request.
       DATA options TYPE STANDARD TABLE OF string WITH DEFAULT KEY.
       DATA parameters TYPE zllm_keyvalues.
@@ -392,7 +390,7 @@ CLASS zcl_llm_client_vertexai IMPLEMENTATION.
     CLEAR result-choice.
     result-choice-finish_reason = candidate-finishreason.
     CLEAR result-choice-message.
-    result-choice-message-role = zif_llm_client=>role_assistant.
+    result-choice-message-role = zif_llm_client_int=>role_assistant.
     result-choice-message-content = concat_lines_of( table = messages
 sep = `\n` ).
 
@@ -440,7 +438,7 @@ sep = `\n` ).
               
               CLEAR temp3.
               temp3 = result-choice-message.
-              temp3-role = zif_llm_client=>role_tool.
+              temp3-role = zif_llm_client_int=>role_tool.
               temp3-name = details-name.
               temp3-content = <tool_call>-args.
               result-choice-message = temp3.

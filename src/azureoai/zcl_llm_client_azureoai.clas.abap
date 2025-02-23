@@ -14,7 +14,7 @@ CLASS zcl_llm_client_azureoai DEFINITION
     CLASS-METHODS get_client
       IMPORTING client_config   TYPE zllm_clnt_config
                 provider_config TYPE zllm_providers
-      RETURNING VALUE(result)   TYPE REF TO zif_llm_client
+      RETURNING VALUE(result)   TYPE REF TO zif_llm_client_int
       RAISING   zcx_llm_validation
                 zcx_llm_authorization.
 
@@ -61,10 +61,8 @@ CLASS zcl_llm_client_azureoai IMPLEMENTATION.
         RECEIVING result = DATA(enc_class).
       auth_value = enc_class->decrypt( provider_config-auth_encrypted ).
     ENDIF.
-    IF provider_config-auth_type = 'A'.
-      client->set_header( name  = 'api-key'
-                          value = auth_value ).
-    ENDIF.
+    client->set_header( name  = 'api-key'
+                        value = auth_value ).
   ENDMETHOD.
 
   METHOD create_structured_output.

@@ -95,7 +95,7 @@ CLASS zcl_llm_tool_calculator IMPLEMENTATION.
     CLEAR temp1.
     
     temp2-fieldname = 'EXPRESSION'.
-    temp2-description = 'Mathematical expression to evaluate. Supports +, -, *, /, **, MOD and parentheses'.
+    temp2-description = 'Mathematical expression to evaluate. Supports +, -, *, /, **, MOD and parentheses.'.
     INSERT temp2 INTO TABLE temp1.
     parameters-descriptions  = temp1 ##NO_TEXT.
 

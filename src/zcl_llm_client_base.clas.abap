@@ -3,7 +3,7 @@ CLASS zcl_llm_client_base DEFINITION
   ABSTRACT.
 
   PUBLIC SECTION.
-    INTERFACES zif_llm_client.
+    INTERFACES zif_llm_client_int.
 
     METHODS constructor
       IMPORTING client_config   TYPE zllm_clnt_config
@@ -379,7 +379,7 @@ CLASS zcl_llm_client_base IMPLEMENTATION.
                                CHANGING  data = response-choice-structured_output ).
   ENDMETHOD.
 
-  METHOD zif_llm_client~chat.
+  METHOD zif_llm_client_int~chat.
         DATA resp TYPE zif_llm_http_client_wrapper=>response.
         DATA temp2 TYPE zllm_statistics.
         DATA http_error TYPE REF TO zcx_llm_http_error.
@@ -417,7 +417,7 @@ CLASS zcl_llm_client_base IMPLEMENTATION.
     ENDTRY.
   ENDMETHOD.
 
-  METHOD zif_llm_client~new_request.
+  METHOD zif_llm_client_int~new_request.
     DATA request TYPE zllm_request.
       DATA options TYPE STANDARD TABLE OF string WITH DEFAULT KEY.
       DATA parameters TYPE zllm_keyvalues.
@@ -460,7 +460,7 @@ CLASS zcl_llm_client_base IMPLEMENTATION.
     CREATE OBJECT response TYPE zcl_llm_chat_request EXPORTING REQUEST = request.
   ENDMETHOD.
 
-  METHOD zif_llm_client~get_client.
+  METHOD zif_llm_client_int~get_client.
     CALL METHOD (provider_config-provider_class)=>get_client
       EXPORTING
         client_config   = client_config

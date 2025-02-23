@@ -6,7 +6,8 @@ CLASS zcl_llm_factory DEFINITION
   PUBLIC SECTION.
     INTERFACES zif_llm_factory.
 
-    ALIASES get_client FOR zif_llm_factory~get_client.
+    ALIASES get_client     FOR zif_llm_factory~get_client.
+    ALIASES get_client_int FOR zif_llm_factory~get_client_int.
 
     CLASS-METHODS class_constructor.
 
@@ -18,6 +19,19 @@ ENDCLASS.
 
 CLASS zcl_llm_factory IMPLEMENTATION.
   METHOD zif_llm_factory~get_client.
+    DATA int_client TYPE REF TO zif_llm_client_int.
+    int_client = zif_llm_factory~get_client_int( model ).
+    CREATE OBJECT response TYPE zcl_llm_client EXPORTING INT_CLIENT = int_client.
+  ENDMETHOD.
+
+  METHOD class_constructor.
+    DATA(llm_badi) = zcl_llm_common=>get_llm_badi( ).
+    CALL BADI llm_badi->get_authorization_impl
+      RECEIVING
+        result = auth_class.
+  ENDMETHOD.
+
+  METHOD zif_llm_factory~get_client_int.
     DATA client_configuration TYPE zllm_clnt_config.
       DATA temp1 TYPE string.
       DATA temp3 TYPE REF TO zcx_llm_validation.
@@ -47,17 +61,12 @@ CLASS zcl_llm_factory IMPLEMENTATION.
       RAISE EXCEPTION temp4.
     ENDIF.
 
-    CALL METHOD (provider_configuration-provider_class)=>('ZIF_LLM_CLIENT~GET_CLIENT')
-      EXPORTING client_config   = client_configuration
-                provider_config = provider_configuration
-      RECEIVING response        = response.
-  ENDMETHOD.
-
-  METHOD class_constructor.
-    DATA(llm_badi) = zcl_llm_common=>get_llm_badi( ).
-    CALL BADI llm_badi->get_authorization_impl
+    CALL METHOD (provider_configuration-provider_class)=>('ZIF_LLM_CLIENT_INT~GET_CLIENT')
+      EXPORTING
+        client_config   = client_configuration
+        provider_config = provider_configuration
       RECEIVING
-        result = auth_class.
+        response        = response.
   ENDMETHOD.
 
 ENDCLASS.

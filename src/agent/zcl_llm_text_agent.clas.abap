@@ -29,10 +29,10 @@ ENDCLASS.
 CLASS zcl_llm_text_agent IMPLEMENTATION.
 
   METHOD constructor.
-        DATA client TYPE REF TO zif_llm_client.
+        DATA client TYPE REF TO zif_llm_client_int.
     TRY.
         
-        client = zcl_llm_factory=>get_client( model ).
+        client = zcl_llm_factory=>get_client_int( model ).
       CATCH zcx_llm_authorization.
         " Currently no action
     ENDTRY.
