@@ -36,7 +36,7 @@ CLASS zcl_llm_chat_request IMPLEMENTATION.
 
   METHOD add_tool_result.
     DATA(tool_result) = tool->get_result( ).
-    APPEND VALUE #( role         = zif_llm_client=>role_tool
+    APPEND VALUE #( role         = zif_llm_client_int=>role_tool
                     tool_call_id = tool_result-tool_call_id
                     content      = zcl_llm_common=>to_json( data = tool_result-data compress = abap_false )
                     name         = tool_result-name ) TO request-messages.
@@ -105,7 +105,7 @@ CLASS zcl_llm_chat_request IMPLEMENTATION.
 
   METHOD add_tool_choices.
     DATA msg TYPE zllm_msg.
-    msg-role = zif_llm_client=>role_assistant.
+    msg-role = zif_llm_client_int=>role_assistant.
     APPEND LINES OF choices TO msg-tool_calls.
     APPEND msg TO request-messages.
   ENDMETHOD.

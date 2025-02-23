@@ -272,6 +272,18 @@
      <MSGNR>044</MSGNR>
      <TEXT>Signing failed. Details &amp;1</TEXT>
     </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZLLM_CLIENT</ARBGB>
+     <MSGNR>045</MSGNR>
+     <TEXT>Tool &amp;1 not found</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZLLM_CLIENT</ARBGB>
+     <MSGNR>055</MSGNR>
+     <TEXT>Tool call with id &amp;1 not found</TEXT>
+    </T100>
    </T100>
   </asx:values>
  </asx:abap>

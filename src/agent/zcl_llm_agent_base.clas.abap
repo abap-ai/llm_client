@@ -8,7 +8,7 @@ CLASS zcl_llm_agent_base DEFINITION
     INTERFACES zif_llm_agent_internal.
 
     METHODS constructor
-      IMPORTING !client TYPE REF TO zif_llm_client
+      IMPORTING !client TYPE REF TO zif_llm_client_int
                 tools   TYPE zllm_tools
       RAISING   zcx_llm_agent_error.
 
@@ -23,7 +23,7 @@ CLASS zcl_llm_agent_base DEFINITION
     ALIASES get_options FOR zif_llm_agent~get_options.
 
   PROTECTED SECTION.
-    DATA client         TYPE REF TO zif_llm_client.
+    DATA client         TYPE REF TO zif_llm_client_int.
     DATA chat_request   TYPE REF TO zif_llm_chat_request.
     DATA memory         TYPE zif_llm_agent=>memory_entries.
     DATA status         TYPE zif_llm_agent=>status.
@@ -245,7 +245,7 @@ CLASS zcl_llm_agent_base IMPLEMENTATION.
                                     tool_call_id = <tool_call>-id ).
           ENDIF.
 
-          add_to_memory_internal( VALUE #( msg-role         = zif_llm_client=>role_tool
+          add_to_memory_internal( VALUE #( msg-role         = zif_llm_client_int=>role_tool
                                            msg-tool_call_id = <tool_call>-id
                                            msg-content      = zcl_llm_common=>to_json(
                                                                   data = matching_tool->get_result( ) ) ) ).

@@ -70,7 +70,7 @@ CLASS ltcl_chat_request IMPLEMENTATION.
 
   METHOD test_add_message.
     DATA(message) = VALUE zllm_msg(
-      role = zif_llm_client=>role_user
+      role = zif_llm_client_int=>role_user
       content = 'Test message' ).
 
     chat_request->add_message( message ).
@@ -86,9 +86,9 @@ CLASS ltcl_chat_request IMPLEMENTATION.
 
   METHOD test_add_messages.
     DATA(messages) = VALUE zllm_msgs( (
-      role = zif_llm_client=>role_user
+      role = zif_llm_client_int=>role_user
       content = 'Message 1' ) (
-      role = zif_llm_client=>role_assistant
+      role = zif_llm_client_int=>role_assistant
       content = 'Message 2' ) ).
 
     chat_request->add_messages( messages ).
@@ -138,7 +138,7 @@ CLASS ltcl_chat_request IMPLEMENTATION.
       exp = 1
       act = lines( messages ) ).
     cl_abap_unit_assert=>assert_equals(
-      exp = zif_llm_client=>role_tool
+      exp = zif_llm_client_int=>role_tool
       act = messages[ 1 ]-role ).
     cl_abap_unit_assert=>assert_equals(
       exp = test_result-tool_call_id
@@ -201,7 +201,7 @@ CLASS ltcl_chat_request IMPLEMENTATION.
       exp = 1
       act = lines( messages ) ).
     cl_abap_unit_assert=>assert_equals(
-      exp = zif_llm_client=>role_assistant
+      exp = zif_llm_client_int=>role_assistant
       act = messages[ 1 ]-role ).
   ENDMETHOD.
 

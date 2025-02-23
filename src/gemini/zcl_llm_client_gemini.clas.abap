@@ -9,7 +9,7 @@ CLASS zcl_llm_client_gemini DEFINITION
     CLASS-METHODS get_client
       IMPORTING client_config   TYPE zllm_clnt_config
                 provider_config TYPE zllm_providers
-      RETURNING VALUE(result)   TYPE REF TO zif_llm_client
+      RETURNING VALUE(result)   TYPE REF TO zif_llm_client_int
       RAISING   zcx_llm_validation
                 zcx_llm_authorization.
 
@@ -18,8 +18,8 @@ CLASS zcl_llm_client_gemini DEFINITION
                 provider_config TYPE zllm_providers
       RAISING   zcx_llm_validation
                 zcx_llm_authorization.
-    METHODS zif_llm_client~new_request REDEFINITION.
-    METHODS zif_llm_client~chat REDEFINITION.
+    METHODS zif_llm_client_int~new_request REDEFINITION.
+    METHODS zif_llm_client_int~chat REDEFINITION.
   PROTECTED SECTION.
     METHODS: get_http_client REDEFINITION,
       set_auth REDEFINITION,
@@ -100,7 +100,7 @@ CLASS zcl_llm_client_gemini IMPLEMENTATION.
     " Not handled here, need to do it on every call
   ENDMETHOD.
 
-  METHOD zif_llm_client~chat.
+  METHOD zif_llm_client_int~chat.
     " Set the auth parameter, everything else will be handled by the base class
     TRY.
         IF api_key IS INITIAL.
@@ -113,7 +113,7 @@ CLASS zcl_llm_client_gemini IMPLEMENTATION.
           ENDIF.
         ENDIF.
         client->set_parmeter( name = 'key' value = api_key ).
-        response = super->zif_llm_client~chat( request ).
+        response = super->zif_llm_client_int~chat( request ).
         " We use two different catch entries due to downport issues
       CATCH zcx_llm_http_error INTO DATA(http_error).
         response-success = abap_false.
@@ -257,9 +257,9 @@ CLASS zcl_llm_client_gemini IMPLEMENTATION.
     ELSE.
       DATA role TYPE string.
       CASE message-role.
-        WHEN zif_llm_client=>role_user.
-          role = zif_llm_client=>role_user.
-        WHEN zif_llm_client=>role_assistant OR zif_llm_client=>role_tool.
+        WHEN zif_llm_client_int=>role_user.
+          role = zif_llm_client_int=>role_user.
+        WHEN zif_llm_client_int=>role_assistant OR zif_llm_client_int=>role_tool.
           role = 'model'.
       ENDCASE.
       result = |\{"role":"{ role }","parts":[\{"text":"{
@@ -268,7 +268,7 @@ CLASS zcl_llm_client_gemini IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
-  METHOD zif_llm_client~new_request.
+  METHOD zif_llm_client_int~new_request.
     DATA request TYPE zllm_request.
 
     " Initialize options
@@ -336,7 +336,7 @@ CLASS zcl_llm_client_gemini IMPLEMENTATION.
     ENDLOOP.
 
     result-choice = VALUE #( finish_reason = candidate-finishreason
-                             message       = VALUE #( role    = zif_llm_client=>role_assistant
+                             message       = VALUE #( role    = zif_llm_client_int=>role_assistant
                                                       content = concat_lines_of( table = messages
                                                                                  sep   = `\n` ) ) ).
 
@@ -374,7 +374,7 @@ CLASS zcl_llm_client_gemini IMPLEMENTATION.
                      TO result-choice-tool_calls.
 
               result-choice-message = VALUE #( BASE result-choice-message
-                                               role    = zif_llm_client=>role_tool
+                                               role    = zif_llm_client_int=>role_tool
                                                name    = details-name
                                                content = <tool_call>-args ).
 

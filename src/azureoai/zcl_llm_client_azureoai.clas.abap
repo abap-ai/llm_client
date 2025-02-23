@@ -14,7 +14,7 @@ CLASS zcl_llm_client_azureoai DEFINITION
     CLASS-METHODS get_client
       IMPORTING client_config   TYPE zllm_clnt_config
                 provider_config TYPE zllm_providers
-      RETURNING VALUE(result)   TYPE REF TO zif_llm_client
+      RETURNING VALUE(result)   TYPE REF TO zif_llm_client_int
       RAISING   zcx_llm_validation
                 zcx_llm_authorization.
 

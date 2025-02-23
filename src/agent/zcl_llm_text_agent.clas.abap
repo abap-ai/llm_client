@@ -30,7 +30,7 @@ CLASS zcl_llm_text_agent IMPLEMENTATION.
 
   METHOD constructor.
     TRY.
-        DATA(client) = zcl_llm_factory=>get_client( model ).
+        DATA(client) = zcl_llm_factory=>get_client_int( model ).
       CATCH zcx_llm_authorization.
         " Currently no action
     ENDTRY.

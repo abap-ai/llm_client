@@ -8,7 +8,7 @@ CLASS zcl_llm_client_anthropic DEFINITION
     CLASS-METHODS get_client
       IMPORTING client_config   TYPE zllm_clnt_config
                 provider_config TYPE zllm_providers
-      RETURNING VALUE(result)   TYPE REF TO zif_llm_client
+      RETURNING VALUE(result)   TYPE REF TO zif_llm_client_int
       RAISING   zcx_llm_validation
                 zcx_llm_authorization.
 
@@ -18,7 +18,7 @@ CLASS zcl_llm_client_anthropic DEFINITION
       RAISING   zcx_llm_validation
                 zcx_llm_authorization.
 
-    METHODS zif_llm_client~new_request REDEFINITION.
+    METHODS zif_llm_client_int~new_request REDEFINITION.
 
   PROTECTED SECTION.
     METHODS get_http_client      REDEFINITION.
@@ -93,8 +93,8 @@ CLASS zcl_llm_client_anthropic IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
-  METHOD zif_llm_client~new_request.
-    response = super->zif_llm_client~new_request( ).
+  METHOD zif_llm_client_int~new_request.
+    response = super->zif_llm_client_int~new_request( ).
     " max_tokens is mandatory for anthropic models. The current ones support 8192.
     response->options( )->set_max_tokens( 8192 ).
     " Structured output is not supported but for now we just leave the default
@@ -224,7 +224,7 @@ CLASS zcl_llm_client_anthropic IMPLEMENTATION.
     ELSE.
 
       " Need to differentiate between user and tool message
-      IF message-role = zif_llm_client=>role_tool.
+      IF message-role = zif_llm_client_int=>role_tool.
         result = |\{"role":"user","content":[\{"type":"tool_result",|
               && |"tool_use_id":"{ message-tool_call_id }","content":"|
               && |{ escape( val    = message-content
@@ -280,7 +280,7 @@ CLASS zcl_llm_client_anthropic IMPLEMENTATION.
     " Handle tool calls
     " To minimize effort we just transfer the anthropic response structure to our internal one
     DATA(response_choice) = VALUE base_choice( finish_reason = response-stop_reason
-                                               message       = VALUE #( role    = zif_llm_client=>role_assistant
+                                               message       = VALUE #( role    = zif_llm_client_int=>role_assistant
                                                                         content = assistant_response ) ).
     LOOP AT tool_calls ASSIGNING FIELD-SYMBOL(<tool_call>).
       APPEND VALUE #( id       = <tool_call>-id

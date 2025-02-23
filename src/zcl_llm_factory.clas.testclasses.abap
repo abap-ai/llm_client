@@ -56,10 +56,10 @@ CLASS ltcl_llm_factory IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD get_client_valid_model.
-    DATA client TYPE REF TO zif_llm_client.
+    DATA client TYPE REF TO zif_llm_client_int.
 
     TRY.
-        client = zcl_llm_factory=>zif_llm_factory~get_client( valid_model ).
+        client = zcl_llm_factory=>zif_llm_factory~get_client_int( valid_model ).
 
         cl_abap_unit_assert=>assert_bound(
           act = client
@@ -73,10 +73,10 @@ CLASS ltcl_llm_factory IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD get_client_invalid_model.
-    DATA client TYPE REF TO zif_llm_client.
+    DATA client TYPE REF TO zif_llm_client_int.
 
     TRY.
-        client = zcl_llm_factory=>zif_llm_factory~get_client( invalid_model ).
+        client = zcl_llm_factory=>zif_llm_factory~get_client_int( invalid_model ).
         cl_abap_unit_assert=>fail( 'Expected validation error not raised' ).
 
       CATCH zcx_llm_validation INTO DATA(error).
@@ -92,7 +92,7 @@ CLASS ltcl_llm_factory IMPLEMENTATION.
   METHOD get_client_invalid_provider.
 
     TRY.
-        DATA(client) = zcl_llm_factory=>zif_llm_factory~get_client( invalid_model ).
+        DATA(client) = zcl_llm_factory=>zif_llm_factory~get_client_int( invalid_model ).
         cl_abap_unit_assert=>fail( 'Expected validation error not raised' ).
 
       CATCH zcx_llm_validation INTO DATA(error).
@@ -109,17 +109,17 @@ ENDCLASS.
 
 CLASS ltcl_mock_llm_client DEFINITION FOR TESTING.
   PUBLIC SECTION.
-    INTERFACES zif_llm_client.
+    INTERFACES zif_llm_client_int.
 ENDCLASS.
 
 CLASS ltcl_mock_llm_client IMPLEMENTATION.
-  METHOD zif_llm_client~chat.
-  ENDMETHOD. "#EC EMPTY_PROCEDURE
+  METHOD zif_llm_client_int~chat.
+  ENDMETHOD.                                       "#EC EMPTY_PROCEDURE
 
-  METHOD zif_llm_client~new_request.
-  ENDMETHOD. "#EC EMPTY_PROCEDURE
+  METHOD zif_llm_client_int~new_request.
+  ENDMETHOD.                                       "#EC EMPTY_PROCEDURE
 
-  METHOD zif_llm_client~get_client.
+  METHOD zif_llm_client_int~get_client.
     response = NEW ltcl_mock_llm_client( ).
   ENDMETHOD.
 ENDCLASS.

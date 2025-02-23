@@ -8,7 +8,7 @@ CLASS zcl_llm_client_ollama DEFINITION
     CLASS-METHODS get_client
       IMPORTING client_config   TYPE zllm_clnt_config
                 provider_config TYPE zllm_providers
-      RETURNING VALUE(result)   TYPE REF TO zif_llm_client
+      RETURNING VALUE(result)   TYPE REF TO zif_llm_client_int
       RAISING   zcx_llm_validation
                 zcx_llm_authorization.
 
@@ -203,7 +203,7 @@ CLASS zcl_llm_client_ollama IMPLEMENTATION.
 
               " For Ollama, we need to use the unescaped JSON directly
               result-choice-message = VALUE #( BASE result-choice-message
-                                               role    = zif_llm_client=>role_tool
+                                               role    = zif_llm_client_int=>role_tool
                                                name    = details-name
                                                content = <tool_call>-function-arguments ).
 

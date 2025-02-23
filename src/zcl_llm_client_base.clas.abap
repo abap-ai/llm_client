@@ -3,7 +3,7 @@ CLASS zcl_llm_client_base DEFINITION
   ABSTRACT.
 
   PUBLIC SECTION.
-    INTERFACES zif_llm_client.
+    INTERFACES zif_llm_client_int.
 
     METHODS constructor
       IMPORTING client_config   TYPE zllm_clnt_config
@@ -329,7 +329,7 @@ CLASS zcl_llm_client_base IMPLEMENTATION.
                                CHANGING  data = response-choice-structured_output ).
   ENDMETHOD.
 
-  METHOD zif_llm_client~chat.
+  METHOD zif_llm_client_int~chat.
     TRY.
         msg = msg + 1.
         client->set_url( get_chat_endpoint( ) ).
@@ -359,7 +359,7 @@ CLASS zcl_llm_client_base IMPLEMENTATION.
     ENDTRY.
   ENDMETHOD.
 
-  METHOD zif_llm_client~new_request.
+  METHOD zif_llm_client_int~new_request.
     DATA request TYPE zllm_request.
 
     " Initialize options
@@ -389,7 +389,7 @@ CLASS zcl_llm_client_base IMPLEMENTATION.
     response = NEW zcl_llm_chat_request( request ).
   ENDMETHOD.
 
-  METHOD zif_llm_client~get_client.
+  METHOD zif_llm_client_int~get_client.
     CALL METHOD (provider_config-provider_class)=>get_client
       EXPORTING
         client_config   = client_config
