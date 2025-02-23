@@ -8,7 +8,7 @@ CLASS zcl_llm_client_anthropic DEFINITION
     CLASS-METHODS get_client
       IMPORTING client_config   TYPE zllm_clnt_config
                 provider_config TYPE zllm_providers
-      RETURNING VALUE(result)   TYPE REF TO zif_llm_client
+      RETURNING VALUE(result)   TYPE REF TO zif_llm_client_int
       RAISING   zcx_llm_validation
                 zcx_llm_authorization.
 
@@ -18,7 +18,7 @@ CLASS zcl_llm_client_anthropic DEFINITION
       RAISING   zcx_llm_validation
                 zcx_llm_authorization.
 
-    METHODS zif_llm_client~new_request REDEFINITION.
+    METHODS zif_llm_client_int~new_request REDEFINITION.
 
   PROTECTED SECTION.
     METHODS get_http_client      REDEFINITION.
@@ -82,18 +82,15 @@ CLASS zcl_llm_client_anthropic IMPLEMENTATION.
     IF provider_config-auth_encrypted IS NOT INITIAL.
       DATA(llm_badi) = zcl_llm_common=>get_llm_badi( ).
       CALL BADI llm_badi->get_encryption_impl
-        RECEIVING
-          result = DATA(enc_class).
+        RECEIVING result = DATA(enc_class).
       auth_value = enc_class->decrypt( provider_config-auth_encrypted ).
     ENDIF.
-    IF provider_config-auth_type = 'A'.
-      client->set_header( name  = 'x-api-key'
-                          value = auth_value ).
-    ENDIF.
+    client->set_header( name  = 'x-api-key'
+                        value = auth_value ).
   ENDMETHOD.
 
-  METHOD zif_llm_client~new_request.
-    response = super->zif_llm_client~new_request( ).
+  METHOD zif_llm_client_int~new_request.
+    response = super->zif_llm_client_int~new_request( ).
     " max_tokens is mandatory for anthropic models. The current ones support 8192.
     response->options( )->set_max_tokens( 8192 ).
     " Structured output is not supported but for now we just leave the default
@@ -246,7 +243,7 @@ CLASS zcl_llm_client_anthropic IMPLEMENTATION.
     ELSE.
 
       " Need to differentiate between user and tool message
-      IF message-role = zif_llm_client=>role_tool.
+      IF message-role = zif_llm_client_int=>role_tool.
         result = |\{"role":"user","content":[\{"type":"tool_result",|
               && |"tool_use_id":"{ message-tool_call_id }","content":"|
               && |{ escape( val    = message-content
@@ -318,7 +315,7 @@ CLASS zcl_llm_client_anthropic IMPLEMENTATION.
     CLEAR temp1.
     temp1-finish_reason = response-stop_reason.
     CLEAR temp1-message.
-    temp1-message-role = zif_llm_client=>role_assistant.
+    temp1-message-role = zif_llm_client_int=>role_assistant.
     temp1-message-content = assistant_response.
     
     response_choice = temp1.

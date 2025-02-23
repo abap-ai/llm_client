@@ -7,7 +7,7 @@ CLASS zcl_llm_client_openai DEFINITION
     CLASS-METHODS get_client
       IMPORTING client_config   TYPE zllm_clnt_config
                 provider_config TYPE zllm_providers
-      RETURNING VALUE(result)   TYPE REF TO zif_llm_client
+      RETURNING VALUE(result)   TYPE REF TO zif_llm_client_int
       RAISING   zcx_llm_validation
                 zcx_llm_authorization.
 
@@ -51,10 +51,8 @@ CLASS zcl_llm_client_openai IMPLEMENTATION.
         RECEIVING result = DATA(enc_class).
       auth_value = enc_class->decrypt( provider_config-auth_encrypted ).
     ENDIF.
-    IF provider_config-auth_type = 'A'.
-      client->set_header( name  = 'Authorization'
-                          value = |Bearer { auth_value }| ) ##NO_TEXT.
-    ENDIF.
+    client->set_header( name  = 'Authorization'
+                        value = |Bearer { auth_value }| ) ##NO_TEXT.
   ENDMETHOD.
 
   METHOD create_structured_output.

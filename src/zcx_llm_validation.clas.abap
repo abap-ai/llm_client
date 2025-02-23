@@ -98,6 +98,24 @@ public section.
       attr3 type scx_attrname value '',
       attr4 type scx_attrname value '',
     end of SIGN_ISSUE .
+  constants:
+    begin of TOOL_CALL_NOT_FOUND,
+      msgid type symsgid value 'ZLLM_CLIENT',
+      msgno type symsgno value '055',
+      attr1 type scx_attrname value 'MV_ATTR1',
+      attr2 type scx_attrname value '',
+      attr3 type scx_attrname value '',
+      attr4 type scx_attrname value '',
+    end of TOOL_CALL_NOT_FOUND .
+  constants:
+    begin of TOOL_NOT_FOUND,
+      msgid type symsgid value 'ZLLM_CLIENT',
+      msgno type symsgno value '045',
+      attr1 type scx_attrname value 'MV_ATTR1',
+      attr2 type scx_attrname value '',
+      attr3 type scx_attrname value '',
+      attr4 type scx_attrname value '',
+    end of TOOL_NOT_FOUND .
   data MV_ATTR1 type STRING .
   data MV_ATTR2 type STRING .
   data MV_ATTR3 type STRING .

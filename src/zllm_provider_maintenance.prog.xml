@@ -64,7 +64,7 @@
       <TYPE>M</TYPE>
       <NEXTSCREEN>0200</NEXTSCREEN>
       <LINES>027</LINES>
-      <COLUMNS>123</COLUMNS>
+      <COLUMNS>124</COLUMNS>
      </HEADER>
      <CONTAINERS>
       <RPY_DYCATT>
@@ -75,7 +75,7 @@
        <TYPE>CUST_CTRL</TYPE>
        <NAME>CUSTOM_CONTROL</NAME>
        <ELEMENT_OF>SCREEN</ELEMENT_OF>
-       <LINE>008</LINE>
+       <LINE>007</LINE>
        <COLUMN>002</COLUMN>
        <LENGTH>114</LENGTH>
        <HEIGHT>015</HEIGHT>
@@ -181,39 +181,9 @@
        <CONT_TYPE>SCREEN</CONT_TYPE>
        <CONT_NAME>SCREEN</CONT_NAME>
        <TYPE>TEXT</TYPE>
-       <NAME>%#AUTOTEXT004</NAME>
-       <TEXT>Auth_Type</TEXT>
-       <LINE>004</LINE>
-       <COLUMN>001</COLUMN>
-       <LENGTH>009</LENGTH>
-       <VISLENGTH>009</VISLENGTH>
-       <HEIGHT>001</HEIGHT>
-       <FORMAT>CHAR</FORMAT>
-       <REQU_ENTRY>N</REQU_ENTRY>
-       <LABELLEFT>X</LABELLEFT>
-      </RPY_DYFATC>
-      <RPY_DYFATC>
-       <CONT_TYPE>SCREEN</CONT_TYPE>
-       <CONT_NAME>SCREEN</CONT_NAME>
-       <TYPE>TEMPLATE</TYPE>
-       <NAME>SCREEN_FIELDS-AUTH_TYPE</NAME>
-       <TEXT>_</TEXT>
-       <LINE>004</LINE>
-       <COLUMN>023</COLUMN>
-       <LENGTH>001</LENGTH>
-       <VISLENGTH>001</VISLENGTH>
-       <HEIGHT>001</HEIGHT>
-       <FORMAT>CHAR</FORMAT>
-       <INPUT_FLD>X</INPUT_FLD>
-       <OUTPUT_FLD>X</OUTPUT_FLD>
-      </RPY_DYFATC>
-      <RPY_DYFATC>
-       <CONT_TYPE>SCREEN</CONT_TYPE>
-       <CONT_NAME>SCREEN</CONT_NAME>
-       <TYPE>TEXT</TYPE>
        <NAME>%#AUTOTEXT006</NAME>
        <TEXT>Auth_RFC_Destination</TEXT>
-       <LINE>005</LINE>
+       <LINE>004</LINE>
        <COLUMN>001</COLUMN>
        <LENGTH>020</LENGTH>
        <VISLENGTH>020</VISLENGTH>
@@ -227,7 +197,7 @@
        <TYPE>TEMPLATE</TYPE>
        <NAME>SCREEN_FIELDS-AUTH_RFC_DESTINATION</NAME>
        <TEXT>________________________________</TEXT>
-       <LINE>005</LINE>
+       <LINE>004</LINE>
        <COLUMN>023</COLUMN>
        <LENGTH>032</LENGTH>
        <VISLENGTH>032</VISLENGTH>
@@ -243,7 +213,7 @@
        <TYPE>FRAME</TYPE>
        <NAME>%#AUTOTEXT005</NAME>
        <TEXT>Auth_Value__________________________________________________________________________________________________________</TEXT>
-       <LINE>007</LINE>
+       <LINE>006</LINE>
        <COLUMN>001</COLUMN>
        <LENGTH>117</LENGTH>
        <VISLENGTH>117</VISLENGTH>
