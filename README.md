@@ -2,10 +2,6 @@
 
 [Discord](https://discord.gg/jf2FhnFvSn) - I will post regular updates and plans there.
 
-## Release Status
-
-**BETA** - Expect bugs outside of the current test scope --> properly test before production use. Breaking changes are possible but will be documented.
-
 ## Documentation
 
 See [Overview](docs/Overview.md) in docs folder.
@@ -39,7 +35,6 @@ Currently supported providers:
 ## Known Limitations
 
 - Tested only on 7.52 & ABAP 2022 - **experimental** downport available in branch 702
-- Supports only API-Key authentication (further ones likely based on provider requirements)
 - No advanced parsing to compensate LLM output errors especially in structured output and tool calls
 
 ## Not planned
@@ -90,7 +85,6 @@ Further features mid-term (check discord for short term plans and to discuss the
 
 - Workaround to force use required tool to simulate structured output where providers miss this feature (e.g. Azure AI Foundry)
 - Better error- and edge-case handling
-- Optional auto-retry for expected error cases (e.g. 429 HTTP Error)
 - Optimizations:
   - Code re-use for the clients where useful
   - Consider a common JSON-Schema builder for structured output and tool use

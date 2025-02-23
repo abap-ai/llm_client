@@ -1,0 +1,13 @@
+2025-02-23 v0.20
+----------------
+
+- Rework of the client interface, old one available as zif_llm_client_int
+- New ZCL_LLM_CLIENT is a wrapper around the old (now internal) interface, prefer this
+- Several bugfixes especially for Gemini client and tool calls
+- Features of the new client:
+    - Simplified interface
+    - Request now handled internally, one interface only
+    - Send User Message with execute --> no add_message required
+    - Auto-add LLM responses to chat history
+    - Auto-retry in case of error (3 times by default, additional 10 seconds wait on 429/529)
+    - Simpler execution of tools

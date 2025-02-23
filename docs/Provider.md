@@ -14,7 +14,6 @@ Provider configuration via Transaction ZLLM_PROVIDER_CONFIG:
 
 - Implementation Class: ZCL_LLM_CLIENT_OPENAI
 - RFC Desitination: created above
-- Auth Type: A (API Key)
 - Auth Value: Paste the API Key
 
 ## [OpenRouter](https://openrouter.ai/)
@@ -31,7 +30,6 @@ Provider configuration via Transaction ZLLM_PROVIDER_CONFIG:
 
 - Implementation Class: ZCL_LLM_CLIENT_OPENROUTER
 - RFC Desitination: created above
-- Auth Type: A (API Key)
 - Auth Value: Paste the API Key
 
 ## [Ollama](https://ollama.com/)
@@ -49,7 +47,6 @@ Provider configuration via Transaction ZLLM_PROVIDER_CONFIG:
 - Implementation Class: ZCL_LLM_CLIENT_OLLAMA
 - RFC Desitination: created above
 - Auth Type: blank - alternative if you use some kind of reverse proxy/API Gateway that adds api-key you can use:
-  - Auth Type: A
   - Auth Value: {apikey-header-name}:{apikey-value} Example: ApiKeyHeader:myApiKey123456
 
 ## [Azure OpenAI Service](https://azure.microsoft.com/de-de/products/ai-services/openai-service)
@@ -66,7 +63,6 @@ Provider configuration via Transaction ZLLM_PROVIDER_CONFIG:
 
 - Implementation Class: ZCL_LLM_CLIENT_AZUREOAI
 - RFC Desitination: created above
-- Auth Type: A (API Key)
 - Auth Value: Paste the API Key
 
 ## [Azure AI Foundry](https://learn.microsoft.com/en-us/azure/ai-studio/what-is-ai-studio)
@@ -84,7 +80,6 @@ Provider configuration via Transaction ZLLM_PROVIDER_CONFIG:
 
 - Implementation Class: ZCL_LLM_CLIENT_AZUREAIF
 - RFC Desitination: created above
-- Auth Type: A (API Key)
 - Auth Value: Paste the API Key
 
 ## [Anthropic](https://docs.anthropic.com/en/home)
@@ -101,7 +96,6 @@ Provider configuration via Transaction ZLLM_PROVIDER_CONFIG:
 
 - Implementation Class: ZCL_LLM_CLIENT_ANTHROPIC
 - RFC Desitination: created above
-- Auth Type: A (API Key)
 - Auth Value: Paste the API Key
 
 ## [VertexAI](https://cloud.google.com/vertex-ai/generative-ai/docs/model-reference/inference)
@@ -128,7 +122,6 @@ Provider configuration via Transaction ZLLM_PROVIDER_CONFIG:
 
 - Implementation Class: ZCL_LLM_CLIENT_VERTEXAI
 - RFC Desitination: created above
-- Auth Type: B (Bearer)
 - Auth Value: {ssfapplication};{service account email} - for example ZG_JWT;serviceAccount\@projectId.iam.gserviceaccount.com
 Hint: the semikolon ";" is mandatory between the ssf application and service account email
 
@@ -146,7 +139,6 @@ Provider configuration via Transaction ZLLM_PROVIDER_CONFIG:
 
 - Implementation Class: ZCL_LLM_CLIENT_DEEPSEEK
 - RFC Desitination: created above
-- Auth Type: A (API Key)
 - Auth Value: Paste the API Key
 
 ## [Gemini Developer API](https://aistudio.google.com/)
@@ -163,7 +155,6 @@ Provider configuration via Transaction ZLLM_PROVIDER_CONFIG:
 
 - Implementation Class: ZCL_LLM_CLIENT_GEMINI
 - RFC Desitination: created above
-- Auth Type: A (API Key)
 - Auth Value: Paste the API Key
 
 ## [AWS Bedrock](https://aws.amazon.com/bedrock)
@@ -180,5 +171,4 @@ Provider configuration via Transaction ZLLM_PROVIDER_CONFIG:
 
 - Implementation Class: ZCL_LLM_CLIENT_AWS
 - RFC Desitination: created above
-- Auth Type: A (API Key)
 - Auth Value: {AWS Credential},{host from above},{region} for example credentialxyz,secret345345asdfsa,bedrock.us-east-1.amazonaws.com,us-east-1

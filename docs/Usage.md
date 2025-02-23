@@ -2,25 +2,24 @@
 
 Have a look at [llm_client_test](https://github.com/abap-ai/llm_client_tests) repository for an implemented example.
 
+## Test Report
+
+Use report ZLLM_CHAT_EXAMPLE to try the client. At the moment a very simple implementation without history. Select the model, enter a user message and hit send to get a response.
+
 ## Simple Call
 
 You can find an implementation example in zcl_llm_tests_main method simple_call.
 
 ```abap
+    " Get client via the factory
     TRY.
         DATA(client) = zcl_llm_factory=>get_client( model ).
       CATCH zcx_llm_authorization INTO DATA(error).
         "Handle the error
     ENDTRY.
 
-    "Create a new request
-    DATA(request) = client->new_request( ).
-
-    "Add a User Message
-    request->add_message( VALUE #( role = client->role_user content = `What makes the ABAP programming language special?` ) ).
-
-    "Call the LLM and wait for the response
-    DATA(response) = client->chat( request = request ).
+    " Send a chat message
+    DATA(response) = client->execute( user_message = `What makes the ABAP programming language special?` ) ##NO_TEXT.
 
     "Check response status and handle errors
     IF response-success = abap_false.
